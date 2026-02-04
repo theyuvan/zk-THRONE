@@ -23,9 +23,11 @@ export function Layout({ children, currentPage, onNavigate }: LayoutProps) {
         <div className="brand">
           <div className="brand-heading">
             <img className="brand-logo" src={studioLogo} alt="Stellar Game Studio logo" />
-            <div className="brand-title">Stellar Game Studio</div>
+            <div className="brand-copy">
+              <div className="brand-title">Stellar Game Studio</div>
+              <p className="brand-subtitle">A DEVELOPER TOOLKIT FOR BUILDING WEB3 GAMES ON STELLAR</p>
+            </div>
           </div>
-          <p className="brand-subtitle">A DEVELOPER TOOLKIT FOR BUILDING WEB3 GAMES ON STELLAR</p>
           <nav className="header-nav">
             <button
               type="button"

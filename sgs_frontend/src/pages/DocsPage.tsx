@@ -20,7 +20,7 @@ export function DocsPage() {
             </a>
           </div>
           <div className="hero-tags">
-            <span>TEMPLATES &AMP; EXAMPLES</span>
+            <span>Templates & Examples</span>
             <span>ECOSYSTEM COMPATIBLE</span>
             <span>ZK READY</span>
           </div>

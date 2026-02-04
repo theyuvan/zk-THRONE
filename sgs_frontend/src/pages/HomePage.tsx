@@ -15,7 +15,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <div className="hero-content">
           <h2>Development Tools For Web3 Game Builders On Stellar</h2>
           <p>
-            Ecosystem ready game templates and examples ready to scaffold into into your development workflow
+            Ecosystem ready tools, templates and examples ready to scaffold into into your Stellar game development workflow
           </p>
           <div className="hero-actions">
             <button type="button" onClick={() => onNavigate('games')}>
