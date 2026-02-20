@@ -1,0 +1,323 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* zk-Throne Design System — Dark Fantasy + Cryptographic Arena */
+
+@layer base {
+  :root {
+    /* === VOID BACKGROUNDS === */
+    --background: 240 20% 4%;          /* #0A0A0F Void Black */
+    --foreground: 46 100% 84%;         /* Warm gold-white */
+
+    --card: 270 40% 8%;                /* Deep purple-black */
+    --card-foreground: 46 100% 84%;
+
+    --popover: 270 40% 6%;
+    --popover-foreground: 46 100% 84%;
+
+    /* === ROYAL GOLD PRIMARY === */
+    --primary: 51 100% 50%;            /* #FFD700 Royal Gold */
+    --primary-foreground: 240 20% 4%;
+
+    /* === DEEP PURPLE SECONDARY === */
+    --secondary: 260 75% 20%;          /* #2A0E5C Deep Purple */
+    --secondary-foreground: 46 100% 84%;
+
+    /* === MUTED DARK === */
+    --muted: 260 30% 12%;
+    --muted-foreground: 260 20% 55%;
+
+    /* === NEON BLUE ACCENT === */
+    --accent: 186 100% 50%;            /* #00F0FF Neon Blue */
+    --accent-foreground: 240 20% 4%;
+
+    /* === CRIMSON DANGER === */
+    --destructive: 342 100% 58%;       /* #FF2E63 Crimson */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 40% 20%;
+    --input: 260 30% 12%;
+    --ring: 51 100% 50%;
+
+    --radius: 0.375rem;
+
+    /* === GAME COLORS === */
+    --gold: 51 100% 50%;
+    --gold-dim: 43 80% 40%;
+    --gold-glow: 51 100% 65%;
+    --neon: 186 100% 50%;
+    --neon-dim: 186 80% 35%;
+    --purple: 260 75% 20%;
+    --purple-bright: 270 60% 40%;
+    --crimson: 342 100% 58%;
+    --void: 240 20% 4%;
+
+    /* === GRADIENTS === */
+    --gradient-throne: linear-gradient(180deg, hsl(260 75% 8%) 0%, hsl(240 20% 2%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(51 100% 50%) 0%, hsl(43 80% 35%) 100%);
+    --gradient-neon: linear-gradient(135deg, hsl(186 100% 50%) 0%, hsl(220 100% 50%) 100%);
+    --gradient-portal: linear-gradient(180deg, hsl(270 60% 15%) 0%, hsl(186 100% 10%) 100%);
+
+    /* === GLOWS === */
+    --glow-gold: 0 0 20px hsl(51 100% 50% / 0.6), 0 0 40px hsl(51 100% 50% / 0.3), 0 0 80px hsl(51 100% 50% / 0.1);
+    --glow-neon: 0 0 20px hsl(186 100% 50% / 0.6), 0 0 40px hsl(186 100% 50% / 0.3);
+    --glow-crimson: 0 0 20px hsl(342 100% 58% / 0.6), 0 0 40px hsl(342 100% 58% / 0.3);
+    --glow-purple: 0 0 20px hsl(270 60% 40% / 0.5), 0 0 40px hsl(270 60% 40% / 0.2);
+
+    /* === TYPOGRAPHY === */
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Rajdhani', sans-serif;
+
+    --sidebar-background: 260 40% 6%;
+    --sidebar-foreground: 46 100% 84%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 240 20% 4%;
+    --sidebar-accent: 260 30% 12%;
+    --sidebar-accent-foreground: 46 100% 84%;
+    --sidebar-border: 260 40% 15%;
+    --sidebar-ring: 51 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body, #root {
+    @apply bg-background text-foreground;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-body);
+  }
+
+  body {
+    background: hsl(var(--void));
+  }
+
+  h1, h2, h3, .display {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+  }
+}
+
+@layer components {
+  /* === THRONE BUTTON === */
+  .btn-throne {
+    @apply relative px-8 py-4 font-display font-bold tracking-widest uppercase text-sm overflow-hidden;
+    font-family: var(--font-display);
+    color: hsl(var(--void));
+    background: var(--gradient-gold);
+    border: 1px solid hsl(var(--gold-glow));
+    box-shadow: var(--glow-gold);
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .btn-throne:hover {
+    box-shadow: var(--glow-gold), 0 0 60px hsl(51 100% 50% / 0.4);
+    transform: scale(1.05);
+    color: hsl(var(--void));
+    background: linear-gradient(135deg, hsl(51 100% 60%) 0%, hsl(43 80% 45%) 100%);
+  }
+  .btn-throne:active {
+    transform: scale(0.98);
+  }
+
+  /* === NEON BUTTON === */
+  .btn-neon {
+    @apply relative px-6 py-3 font-bold tracking-widest uppercase text-xs overflow-hidden;
+    font-family: var(--font-display);
+    color: hsl(var(--neon));
+    background: transparent;
+    border: 1px solid hsl(var(--neon));
+    box-shadow: var(--glow-neon);
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .btn-neon:hover {
+    background: hsl(var(--neon) / 0.1);
+    box-shadow: var(--glow-neon), 0 0 40px hsl(186 100% 50% / 0.4);
+    transform: scale(1.05);
+  }
+
+  /* === PANEL === */
+  .panel-arcane {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--gold) / 0.2);
+    box-shadow: inset 0 0 40px hsl(var(--purple) / 0.3), 0 0 30px hsl(var(--void));
+    clip-path: polygon(16px 0%, 100% 0%, calc(100% - 16px) 100%, 0% 100%);
+  }
+
+  /* === GLOW TEXT === */
+  .text-gold-glow {
+    color: hsl(var(--gold));
+    text-shadow: 0 0 20px hsl(51 100% 50% / 0.8), 0 0 40px hsl(51 100% 50% / 0.4);
+  }
+  .text-neon-glow {
+    color: hsl(var(--neon));
+    text-shadow: 0 0 20px hsl(186 100% 50% / 0.8), 0 0 40px hsl(186 100% 50% / 0.4);
+  }
+  .text-crimson-glow {
+    color: hsl(var(--crimson));
+    text-shadow: 0 0 20px hsl(342 100% 58% / 0.8), 0 0 40px hsl(342 100% 58% / 0.4);
+  }
+
+  /* === PORTAL CARD === */
+  .portal-card {
+    @apply relative flex flex-col items-center justify-center cursor-pointer;
+    transition: all 0.3s ease;
+  }
+  .portal-card:hover {
+    transform: translateY(-8px) scale(1.05);
+  }
+
+  /* === ENERGY LINE === */
+  .energy-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--gold)), hsl(var(--neon)), transparent);
+    box-shadow: 0 0 8px hsl(var(--gold));
+    animation: energy-flow 2s linear infinite;
+  }
+
+  /* === SCANLINE EFFECT === */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(0 0% 0% / 0.05) 2px,
+      hsl(0 0% 0% / 0.05) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* === CORNER DECORATIONS === */
+  .corner-tl::before,
+  .corner-br::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: hsl(var(--gold));
+    border-style: solid;
+  }
+  .corner-tl::before {
+    top: 0; left: 0;
+    border-width: 2px 0 0 2px;
+  }
+  .corner-br::after {
+    bottom: 0; right: 0;
+    border-width: 0 2px 2px 0;
+  }
+}
+
+@layer utilities {
+  /* === ANIMATIONS === */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(5deg); }
+  }
+  @keyframes crown-rotate {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+  }
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: var(--glow-gold); opacity: 1; }
+    50% { box-shadow: 0 0 40px hsl(51 100% 50% / 0.9), 0 0 80px hsl(51 100% 50% / 0.5); opacity: 0.85; }
+  }
+  @keyframes pulse-neon {
+    0%, 100% { box-shadow: var(--glow-neon); opacity: 1; }
+    50% { box-shadow: 0 0 40px hsl(186 100% 50% / 0.9), 0 0 80px hsl(186 100% 50% / 0.5); opacity: 0.85; }
+  }
+  @keyframes spin-portal {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes spin-reverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+  @keyframes energy-flow {
+    from { opacity: 0.4; }
+    50% { opacity: 1; }
+    to { opacity: 0.4; }
+  }
+  @keyframes particle-rise {
+    0% { transform: translateY(0) scale(1); opacity: 0.8; }
+    100% { transform: translateY(-80px) scale(0); opacity: 0; }
+  }
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in-scale {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes throne-glow {
+    0%, 100% { filter: drop-shadow(0 0 20px hsl(51 100% 50% / 0.4)); }
+    50% { filter: drop-shadow(0 0 50px hsl(51 100% 50% / 0.8)); }
+  }
+  @keyframes beam-pulse {
+    0%, 100% { opacity: 0.6; transform: scaleX(1); }
+    50% { opacity: 1; transform: scaleX(1.1); }
+  }
+  @keyframes crown-descend {
+    from { transform: translateY(-100px) scale(0.5); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes explosion {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes rune-flicker {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 1; }
+    50% { opacity: 0.3; }
+    55% { opacity: 1; }
+    85% { opacity: 1; }
+    87% { opacity: 0.5; }
+    90% { opacity: 1; }
+  }
+  @keyframes progress-fill {
+    from { stroke-dashoffset: 283; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  .animate-float-slow { animation: float-slow 5s ease-in-out infinite; }
+  .animate-pulse-gold { animation: pulse-gold 3s ease-in-out infinite; }
+  .animate-pulse-neon { animation: pulse-neon 2.5s ease-in-out infinite; }
+  .animate-spin-portal { animation: spin-portal 6s linear infinite; }
+  .animate-spin-reverse { animation: spin-reverse 4s linear infinite; }
+  .animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; }
+  .animate-fade-in-scale { animation: fade-in-scale 0.6s ease-out forwards; }
+  .animate-throne-glow { animation: throne-glow 3s ease-in-out infinite; }
+  .animate-beam { animation: beam-pulse 2s ease-in-out infinite; }
+  .animate-crown-descend { animation: crown-descend 2s ease-out forwards; }
+  .animate-rune-flicker { animation: rune-flicker 4s ease-in-out infinite; }
+  .animate-shimmer {
+    background: linear-gradient(90deg, hsl(51 100% 50%) 0%, hsl(51 100% 80%) 50%, hsl(51 100% 50%) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+}
+
