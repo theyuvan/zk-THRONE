@@ -76,9 +76,9 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
   };
 
   const modeColors = {
-    3: '#00F0FF',
-    5: '#FFD700',
-    7: '#FF2E63',
+    1: '#00F0FF',
+    3: '#FFD700',
+    5: '#FF2E63',
   };
 
   const color = modeColors[mode];
