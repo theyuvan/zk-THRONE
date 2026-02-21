@@ -14,7 +14,7 @@ import WaitingLobby from '@/components/WaitingLobby';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 
 interface PortalRoomProps {
-  onSelectMode: (mode: TrialMode, trials: Trial[]) => void;
+  onSelectMode: (mode: TrialMode, trials: Trial[], multiplayerInfo?: import('@/types/game').MultiplayerInfo) => void;
   onBack: () => void;
 }
 
@@ -69,15 +69,24 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
 
   const handleGameStart = () => {
     console.log('🚀 Starting game from waiting lobby...');
-    console.log('📊 State:', { pendingMode, waitingRoom, trialsCount: TRIALS.length });
-    if (pendingMode && waitingRoom) {
+    console.log('📊 State:', { pendingMode, waitingRoom, currentRoom, trialsCount: TRIALS.length });
+    if (pendingMode && waitingRoom && currentRoom) {
       // Start game with default trials for now
       const selected = TRIALS.slice(0, pendingMode);
       console.log('✅ Starting game with trials:', selected);
-      onSelectMode(pendingMode, selected);
+      
+      // Pass multiplayer info to Index
+      const multiplayerInfo: import('@/types/game').MultiplayerInfo = {
+        roomId: currentRoom.roomId,
+        isHost,
+        roomCode: waitingRoom.joinCode,
+      };
+      console.log('🎮 Passing multiplayer info:', multiplayerInfo);
+      
+      onSelectMode(pendingMode, selected, multiplayerInfo);
       setWaitingRoom(null);
     } else {
-      console.error('❌ Cannot start game - missing pendingMode or waitingRoom');
+      console.error('❌ Cannot start game - missing pendingMode, waitingRoom, or currentRoom');
     }
   };
 
@@ -100,7 +109,13 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
       console.log(`🎮 Joining room: ${roomCode}, Required code: ${requiresCode}`);
       
       // Join the room via backend
-      await joinRoom(roomCode);
+      const result = await joinRoom(roomCode);
+      
+      // Set pending mode from room's total rounds
+      if (result && result.roomState) {
+        setPendingMode(result.roomState.totalRounds as TrialMode);
+        console.log(`🎯 Set pending mode to: ${result.roomState.totalRounds}`);
+      }
       
       // Show WaitingLobby (not as host)
       setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
@@ -118,7 +133,13 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
       console.log(`🎮 Joining room via code: ${roomCode}`);
       
       // Join the room via backend
-      await joinRoom(roomCode);
+      const result = await joinRoom(roomCode);
+      
+      // Set pending mode from room's total rounds
+      if (result && result.roomState) {
+        setPendingMode(result.roomState.totalRounds as TrialMode);
+        console.log(`🎯 Set pending mode to: ${result.roomState.totalRounds}`);
+      }
       
       // Show WaitingLobby (not as host)
       setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
