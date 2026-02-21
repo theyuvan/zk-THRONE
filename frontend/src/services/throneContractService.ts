@@ -95,12 +95,14 @@ class ThroneContractService {
         signature: signatureScVal,
       });
       
+      // Build contract call with trial_round_id parameter
       const operation = this.contract.call(
         "submit_proof",
         playerAddress.toScVal(),
         solutionHashScVal,
         signatureScVal,
-        nativeToScVal(attestation.nonce, { type: "u64" })
+        nativeToScVal(attestation.nonce, { type: "u64" }),
+        nativeToScVal(attestation.roundId, { type: "u32" })  // trial_round_id (1, 2, 3...)
       );
 
       // STEP 4: Build transaction with higher fee for Soroban
