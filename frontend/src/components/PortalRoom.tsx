@@ -11,6 +11,7 @@ import MultiplayerSelection from '@/components/MultiplayerSelection';
 import TrialSelection from '@/components/TrialSelection';
 import RoomLobby from '@/components/RoomLobby';
 import WaitingLobby from '@/components/WaitingLobby';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 
 interface PortalRoomProps {
   onSelectMode: (mode: TrialMode, trials: Trial[]) => void;
@@ -29,6 +30,9 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
     roomId: string;
     joinCode: string;
   } | null>(null);
+  
+  // Get multiplayer state from hook (single source of truth)
+  const { joinRoom, currentRoom, isHost, countdown, startGame: multiplayerStartGame, createRoom } = useMultiplayer();
 
   const modes: { count: TrialMode; label: string; subtitle: string; color: string }[] = [
     { count: 1, label: '1 TRIAL', subtitle: 'Initiate Path', color: 'hsl(var(--neon))' },
@@ -87,24 +91,39 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
     }
   };
 
-  const handleJoinFromLobby = (roomCode: string, requiresCode: boolean) => {
-    setShowRoomLobby(false);
-    if (pendingMode) {
-      console.log(`Joining room: ${roomCode}, Required code: ${requiresCode}`);
-      // For joining, use the default trial order (or fetch from server)
-      const selected = TRIALS.slice(0, pendingMode);
-      onSelectMode(pendingMode, selected);
+  const handleJoinFromLobby = async (roomCode: string, requiresCode: boolean) => {
+    try {
+      console.log(`🎮 Joining room: ${roomCode}, Required code: ${requiresCode}`);
+      
+      // Join the room via backend
+      await joinRoom(roomCode);
+      
+      // Show WaitingLobby (not as host)
+      setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
+      setShowRoomLobby(false);
+      
+      console.log('✅ Joined room successfully, showing WaitingLobby');
+    } catch (error) {
+      console.error('❌ Failed to join room:', error);
+      alert('Failed to join room. Please check the code and try again.');
     }
   };
 
-  const handleJoin = (roomCode: string) => {
-    setShowMultiplayerDialog(false);
-    if (pendingMode) {
-      // TODO: Implement room joining logic with roomCode
-      console.log(`Joining room: ${roomCode}`);
-      // For joining, use the default trial order
-      const selected = TRIALS.slice(0, pendingMode);
-      onSelectMode(pendingMode, selected);
+  const handleJoin = async (roomCode: string) => {
+    try {
+      console.log(`🎮 Joining room via code: ${roomCode}`);
+      
+      // Join the room via backend
+      await joinRoom(roomCode);
+      
+      // Show WaitingLobby (not as host)
+      setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
+      setShowMultiplayerDialog(false);
+      
+      console.log('✅ Joined room successfully, showing WaitingLobby');
+    } catch (error) {
+      console.error('❌ Failed to join room:', error);
+      alert('Failed to join room. Please check the code and try again.');
     }
   };
 
@@ -276,6 +295,7 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
             onShowTrialSelection={handleShowTrialSelection}
             onShowRoomLobby={handleShowRoomLobby}
             onRoomCreated={handleRoomCreated}
+            createRoom={createRoom}
           />
           <TrialSelection
             isOpen={showTrialSelection}
@@ -296,15 +316,21 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
             onJoinRoom={handleJoinFromLobby}
             mode={pendingMode}
           />
-          {waitingRoom && (
-            <WaitingLobby
-              roomId={waitingRoom.roomId}
-              joinCode={waitingRoom.joinCode}
-              onGameStart={handleGameStart}
-              onBack={handleLeaveRoom}
-            />
-          )}
         </>
+      )}
+
+      {/* Waiting Lobby - shown outside pendingMode check */}
+      {waitingRoom && (
+        <WaitingLobby
+          roomId={waitingRoom.roomId}
+          joinCode={waitingRoom.joinCode}
+          currentRoom={currentRoom!}
+          isHost={isHost}
+          countdown={countdown}
+          onStartGame={multiplayerStartGame}
+          onGameStart={handleGameStart}
+          onBack={handleLeaveRoom}
+        />
       )}
     </div>
   );

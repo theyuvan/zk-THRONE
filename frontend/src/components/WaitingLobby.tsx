@@ -1,32 +1,36 @@
 import { useState, useEffect } from 'react';
-import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { RoomState, Player } from '@/services/multiplayerService';
 import { Copy, Check, Users, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface WaitingLobbyProps {
   roomId: string;
   joinCode: string;
+  currentRoom: RoomState | null;
+  isHost: boolean;
+  countdown: number | null;
+  onStartGame: () => Promise<{ success: boolean }>;
   onGameStart: () => void;
   onBack: () => void;
 }
 
 export default function WaitingLobby({ 
   roomId, 
-  joinCode, 
+  joinCode,
+  currentRoom,
+  isHost,
+  countdown,
+  onStartGame, 
   onGameStart, 
   onBack 
 }: WaitingLobbyProps) {
-  const { currentRoom, startGame, isHost, countdown } = useMultiplayer();
   const [copied, setCopied] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   
-  // Poll room state every 2 seconds to get updated player list
+  // Monitor room state changes
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Room state is automatically updated by the useMultiplayer hook
-      console.log('🔄 Polling room state...', currentRoom);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [roomId, currentRoom]);
+    console.log('🔄 Room state update:', currentRoom);
+  }, [currentRoom]);
   
   // Auto-start game when countdown finishes
   useEffect(() => {
@@ -45,17 +49,50 @@ export default function WaitingLobby({
   const handleStart = async () => {
     try {
       console.log('🎮 Host requesting game start...');
-      await startGame();
-      // Countdown will be handled by useMultiplayer hook
+      setIsStarting(true);
+      await onStartGame();
+      // Countdown will be handled by multiplayer hook polling
     } catch (error) {
       console.error('Failed to start game:', error);
       alert('Failed to start game. Please try again.');
+      setIsStarting(false);
     }
   };
   
   const playerCount = currentRoom?.players.length || 1;
   const maxPlayers = currentRoom?.maxPlayers || 4;
   const canStart = playerCount >= 2;
+  
+  // Show loading state while room is being fetched
+  if (!currentRoom) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-void/95 backdrop-blur-sm"
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          className="panel-arcane p-8 max-w-2xl w-full mx-4"
+          style={{
+            border: '2px solid hsl(var(--gold))',
+            boxShadow: '0 0 40px hsl(var(--gold) / 0.3)',
+          }}
+        >
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-gold mx-auto mb-4" />
+            <p className="text-xl font-bold text-gold-glow" style={{ fontFamily: 'var(--font-display)' }}>
+              LOADING ROOM...
+            </p>
+            <p className="text-sm opacity-70 mt-2">Fetching room state from server</p>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  }
   
   return (
     <motion.div 
@@ -146,23 +183,23 @@ export default function WaitingLobby({
           <div className="space-y-3">
             {currentRoom?.players.map((player, i) => (
               <motion.div
-                key={player}
+                key={player.wallet}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className="flex items-center gap-3 p-4 rounded transition-all"
                 style={{
-                  background: i === 0 ? 'hsl(var(--gold) / 0.1)' : 'hsl(var(--card))',
-                  border: `1px solid ${i === 0 ? 'hsl(var(--gold) / 0.3)' : 'hsl(var(--border))'}`,
+                  background: player.isHost ? 'hsl(var(--gold) / 0.1)' : 'hsl(var(--card))',
+                  border: `1px solid ${player.isHost ? 'hsl(var(--gold) / 0.3)' : 'hsl(var(--border))'}`,
                 }}
               >
                 <div 
                   className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{
-                    background: i === 0 ? 'hsl(var(--gold) / 0.3)' : 'hsl(var(--neon) / 0.3)',
+                    background: player.isHost ? 'hsl(var(--gold) / 0.3)' : 'hsl(var(--neon) / 0.3)',
                   }}
                 >
-                  {i === 0 ? (
+                  {player.isHost ? (
                     <Crown size={24} className="text-gold-glow" />
                   ) : (
                     <span className="text-xl font-bold">{i + 1}</span>
@@ -170,9 +207,9 @@ export default function WaitingLobby({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold font-mono truncate">
-                    {player.slice(0, 8)}...{player.slice(-6)}
+                    {player.wallet.slice(0, 8)}...{player.wallet.slice(-6)}
                   </p>
-                  {i === 0 && (
+                  {player.isHost && (
                     <p className="text-xs opacity-70 text-gold-glow">Host</p>
                   )}
                 </div>

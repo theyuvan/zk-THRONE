@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Trial } from '@/types/game';
-import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useWallet } from '@/hooks/useWallet';
 
 interface MultiplayerSelectionProps {
@@ -16,9 +15,14 @@ interface MultiplayerSelectionProps {
   onShowTrialSelection: () => void;
   onShowRoomLobby: () => void;
   onRoomCreated: (roomId: string, joinCode: string) => void;
+  createRoom: (maxPlayers: number, totalRounds: number) => Promise<{
+    success: boolean;
+    roomId: string;
+    joinCode: string;
+  }>;
 }
 
-export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, mode, onShowTrialSelection, onShowRoomLobby, onRoomCreated }: MultiplayerSelectionProps) {
+export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, mode, onShowTrialSelection, onShowRoomLobby, onRoomCreated, createRoom }: MultiplayerSelectionProps) {
   const [selectedOption, setSelectedOption] = useState<'host' | 'join' | null>(null);
   const [roomCode, setRoomCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -27,7 +31,6 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
   const [roomName, setRoomName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   
-  const { createRoom } = useMultiplayer();
   const { isConnected, connect, publicKey } = useWallet();
 
   const handleHost = async () => {
@@ -45,11 +48,8 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
       
       console.log('✅ Room created:', result);
       
-      // Notify parent component
+      // Notify parent component (don't close dialog - parent will handle it)
       onRoomCreated(result.roomId, result.joinCode);
-      
-      // Close dialog
-      onClose();
       
     } catch (error) {
       console.error('❌ Failed to create room:', error);

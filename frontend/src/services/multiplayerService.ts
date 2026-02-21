@@ -4,16 +4,23 @@
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3030";
 
+export interface Player {
+  wallet: string;
+  displayName: string;
+  isHost: boolean;
+  isReady: boolean;
+}
+
 export interface RoomState {
   roomId: string;
   joinCode: string;
   hostWallet: string;
-  players: string[]; // Wallet addresses
+  players: Player[]; // Player objects with wallet, displayName, etc.
   maxPlayers: number;
   totalRounds: number;
   currentRound: number;
-  status: "waiting" | "starting" | "in_progress" | "finished";
-  startTime?: number;
+  state: "WAITING" | "COUNTDOWN" | "IN_PROGRESS" | "FINISHED";
+  countdownEndsAt?: number | null;
   roundScores?: Record<string, number>; // Only shown at end (ZK privacy!)
 }
 
@@ -28,6 +35,24 @@ export interface JoinRoomResponse {
   success: boolean;
   playerIndex: number;
   roomState: RoomState;
+}
+
+export interface FinalResults {
+  winner: {
+    wallet: string;
+    displayName: string;
+    score: number;
+    accuracy: number;
+    rank: number;
+  };
+  leaderboard: Array<{
+    wallet: string;
+    displayName: string;
+    score: number;
+    accuracy: number;
+    rank: number;
+  }>;
+  totalRounds: number;
 }
 
 class MultiplayerService {

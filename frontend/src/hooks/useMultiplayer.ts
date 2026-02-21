@@ -179,10 +179,10 @@ export function useMultiplayer() {
         setCurrentRoom(newState);
 
         // Handle game start countdown
-        if (newState.status === "starting" && newState.startTime) {
+        if (newState.state === "COUNTDOWN" && newState.countdownEndsAt) {
           const remaining = Math.max(
             0,
-            Math.ceil((newState.startTime - Date.now()) / 1000)
+            Math.ceil((newState.countdownEndsAt - Date.now()) / 1000)
           );
           setCountdown(remaining);
 
@@ -192,7 +192,7 @@ export function useMultiplayer() {
         }
 
         // Clear countdown when game starts
-        if (newState.status === "in_progress") {
+        if (newState.state === "IN_PROGRESS") {
           setCountdown(null);
         }
       },

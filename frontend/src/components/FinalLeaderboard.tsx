@@ -15,10 +15,10 @@ export function FinalLeaderboard() {
 
   useEffect(() => {
     // Auto-fetch results when game finishes
-    if (currentRoom?.status === "finished" && !results) {
+    if (currentRoom?.state === "FINISHED" && !results) {
       fetchResults();
     }
-  }, [currentRoom?.status]);
+  }, [currentRoom?.state]);
 
   const fetchResults = async () => {
     setLoading(true);
