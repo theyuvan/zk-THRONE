@@ -10,6 +10,7 @@ import TrialInfoDialog from '@/components/TrialInfoDialog';
 import MultiplayerSelection from '@/components/MultiplayerSelection';
 import TrialSelection from '@/components/TrialSelection';
 import RoomLobby from '@/components/RoomLobby';
+import WaitingLobby from '@/components/WaitingLobby';
 
 interface PortalRoomProps {
   onSelectMode: (mode: TrialMode, trials: Trial[]) => void;
@@ -24,6 +25,10 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
   const [showTrialSelection, setShowTrialSelection] = useState(false);
   const [showRoomLobby, setShowRoomLobby] = useState(false);
   const [pendingMode, setPendingMode] = useState<TrialMode | null>(null);
+  const [waitingRoom, setWaitingRoom] = useState<{
+    roomId: string;
+    joinCode: string;
+  } | null>(null);
 
   const modes: { count: TrialMode; label: string; subtitle: string; color: string }[] = [
     { count: 1, label: '1 TRIAL', subtitle: 'Initiate Path', color: 'hsl(var(--neon))' },
@@ -50,6 +55,29 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
   const handleShowRoomLobby = () => {
     setShowMultiplayerDialog(false);
     setShowRoomLobby(true);
+  };
+
+  const handleRoomCreated = (roomId: string, joinCode: string) => {
+    console.log(`🎮 Room created in PortalRoom: ${roomId}, Join Code: ${joinCode}`);
+    setWaitingRoom({ roomId, joinCode });
+    setShowMultiplayerDialog(false);
+  };
+
+  const handleGameStart = () => {
+    console.log('🚀 Starting game from waiting lobby...');
+    if (pendingMode && waitingRoom) {
+      // Start game with default trials for now
+      const selected = TRIALS.slice(0, pendingMode);
+      onSelectMode(pendingMode, selected);
+      setWaitingRoom(null);
+    }
+  };
+
+  const handleLeaveRoom = () => {
+    console.log('👋 Leaving waiting lobby...');
+    setWaitingRoom(null);
+    setSelectedMode(null);
+    setPendingMode(null);
   };
 
   const handleTrialSelectionConfirm = (selectedTrials: Trial[]) => {
@@ -247,6 +275,7 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
             mode={pendingMode}
             onShowTrialSelection={handleShowTrialSelection}
             onShowRoomLobby={handleShowRoomLobby}
+            onRoomCreated={handleRoomCreated}
           />
           <TrialSelection
             isOpen={showTrialSelection}
@@ -267,6 +296,14 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
             onJoinRoom={handleJoinFromLobby}
             mode={pendingMode}
           />
+          {waitingRoom && (
+            <WaitingLobby
+              roomId={waitingRoom.roomId}
+              joinCode={waitingRoom.joinCode}
+              onGameStart={handleGameStart}
+              onBack={handleLeaveRoom}
+            />
+          )}
         </>
       )}
     </div>

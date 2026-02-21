@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Crown, Shield, Swords, Zap, Lock, Trophy } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface TrialInfoDialogProps {
   isOpen: boolean;
@@ -46,6 +46,8 @@ export default function TrialInfoDialog({ isOpen, onClose, onContinue, mode }: T
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-void/95 border-2 text-foreground max-h-[90vh] overflow-y-auto" style={{ borderColor: info.color }}>
+        <DialogTitle className="sr-only">{info.title}</DialogTitle>
+        <DialogDescription className="sr-only">{info.description}</DialogDescription>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

@@ -7,6 +7,10 @@ import ProofScene from '@/components/ProofScene';
 import ThroneClaim from '@/components/ThroneClaim';
 import KingReveal from '@/components/KingReveal';
 import { GameScene, GameState, Trial, TrialMode, TRIALS } from '@/types/game';
+import { useGame } from '@/hooks/useGame';
+import { useWallet } from '@/hooks/useWallet';
+import { generateTrialSolution } from '@/utils/trialSolutions';
+import { useToast } from '@/hooks/use-toast';
 
 const initialState: GameState = {
   scene: 'throneHall',
@@ -37,6 +41,9 @@ function SceneTransition({ children, sceneKey }: { children: React.ReactNode; sc
 export default function Index() {
   const [gameState, setGameState] = useState<GameState>(initialState);
   const [selectedTrials, setSelectedTrials] = useState<Trial[]>([]);
+  const { submitSolution, isSubmitting } = useGame();
+  const { isConnected, connect } = useWallet();
+  const { toast } = useToast();
 
   const goTo = useCallback((scene: GameScene, extra?: Partial<GameState>) => {
     setGameState(prev => ({ ...prev, scene, ...extra }));
@@ -60,23 +67,89 @@ export default function Index() {
     }));
   }, []);
 
-  const handleTrialComplete = useCallback(() => {
-    setGameState(prev => {
-      const nextCompleted = prev.trialsCompleted + 1;
-      const nextTrial = selectedTrials[nextCompleted];
-
-      if (nextCompleted >= prev.totalTrials || !nextTrial) {
-        return { ...prev, scene: 'proof', trialsCompleted: nextCompleted };
+  const handleTrialComplete = useCallback(async () => {
+    try {
+      // CRITICAL: Check wallet connection
+      if (!isConnected) {
+        toast({
+          title: "Wallet Not Connected",
+          description: "Please connect your XBull wallet to submit trials.",
+          variant: "destructive",
+        });
+        await connect();
+        return;
       }
 
-      return {
-        ...prev,
-        trialsCompleted: nextCompleted,
-        currentTrial: nextTrial,
-        activatedPortals: [...prev.activatedPortals, prev.currentTrial?.id || ''].filter(Boolean),
-      };
-    });
-  }, [selectedTrials]);
+      // Generate solution token for current trial
+      const currentTrialId = gameState.currentTrial?.id;
+      if (!currentTrialId) {
+        console.error('❌ No current trial ID');
+        return;
+      }
+
+      const roundId = gameState.trialsCompleted + 1;
+      const solution = generateTrialSolution(currentTrialId, roundId);
+      
+      console.log('\n╔═══════════════════════════════════════════════╗');
+      console.log('║     TRIAL COMPLETED - SUBMITTING PROOF        ║');
+      console.log('╚═══════════════════════════════════════════════╝');
+      console.log('🎯 Trial:', currentTrialId);
+      console.log('🔢 Round:', roundId);
+      console.log('💡 Solution:', solution);
+
+      // Show submission toast
+      toast({
+        title: "Submitting Proof...",
+        description: "Generating ZK proof and preparing transaction",
+      });
+
+      // STEP 1: Submit to backend (ZK proof) + contract (transaction)
+      const result = await submitSolution(solution, roundId);
+
+      if (result.success) {
+        console.log('✅ Trial submission successful!');
+        console.log('📋 TX Hash:', result.txHash);
+        console.log('📊 Progress:', result.progress, '/ 7');
+        
+        toast({
+          title: "Trial Verified! ✅",
+          description: `Progress: ${result.progress}/7 trials completed`,
+        });
+
+        // STEP 2: Update UI state
+        setGameState(prev => {
+          const nextCompleted = prev.trialsCompleted + 1;
+          const nextTrial = selectedTrials[nextCompleted];
+
+          if (nextCompleted >= prev.totalTrials || !nextTrial) {
+            return { ...prev, scene: 'proof', trialsCompleted: nextCompleted };
+          }
+
+          return {
+            ...prev,
+            trialsCompleted: nextCompleted,
+            currentTrial: nextTrial,
+            activatedPortals: [...prev.activatedPortals, prev.currentTrial?.id || ''].filter(Boolean),
+          };
+        });
+      } else {
+        // Submission failed
+        console.error('❌ Trial submission failed:', result.error);
+        toast({
+          title: "Submission Failed",
+          description: result.error || "Failed to verify trial. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error('💥 Trial completion error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [gameState, selectedTrials, isConnected, connect, submitSolution, toast]);
 
   const handleProofComplete = useCallback(() => {
     goTo('throneClaim');
@@ -120,6 +193,7 @@ export default function Index() {
               totalTrials={gameState.totalTrials}
               onComplete={handleTrialComplete}
               onBack={() => goTo('portalRoom')}
+              isSubmitting={isSubmitting}
             />
           </SceneTransition>
         );

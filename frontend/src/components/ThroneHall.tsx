@@ -7,6 +7,8 @@ import { TRIALS } from '@/types/game';
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useWallet } from '@/hooks/useWallet';
+import { useGame } from '@/hooks/useGame';
 
 function FloatingPortalMini({ index }: { index: number }) {
   const ref = useRef<THREE.Mesh>(null);
@@ -70,6 +72,9 @@ interface ThroneHallProps {
 }
 
 export default function ThroneHall({ onEnter }: ThroneHallProps) {
+  const { publicKey, isConnected, isConnecting, connect, disconnect } = useWallet();
+  const { progress, king, isKing, backendHealthy } = useGame();
+
   return (
     <div className="relative w-full h-screen bg-void overflow-hidden">
       {/* 3D Canvas */}
@@ -134,6 +139,66 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
           transition={{ duration: 1, delay: 1.2 }}
           className="pb-16 flex flex-col items-center gap-6 pointer-events-auto"
         >
+          {/* Wallet & Status Section */}
+          <div className="flex flex-col items-center gap-4 mb-4">
+            {/* Backend Status Indicator */}
+            <div className="flex items-center gap-2 text-xs">
+              <div 
+                className={`w-2 h-2 rounded-full ${backendHealthy ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}
+                style={{ boxShadow: backendHealthy ? '0 0 10px rgba(74, 222, 128, 0.5)' : '0 0 10px rgba(248, 113, 113, 0.5)' }}
+              />
+              <span style={{ color: backendHealthy ? 'hsl(var(--neon))' : 'hsl(0 70% 60%)' }}>
+                {backendHealthy ? 'ZK BACKEND ONLINE' : 'ZK BACKEND OFFLINE'}
+              </span>
+            </div>
+
+            {/* Wallet Connection */}
+            {!isConnected ? (
+              <button
+                onClick={connect}
+                disabled={isConnecting}
+                className="btn-throne text-sm px-8 py-3"
+                style={{ 
+                  background: 'linear-gradient(135deg, hsl(var(--gold) / 0.2), hsl(var(--neon) / 0.2))',
+                  border: '1px solid hsl(var(--gold) / 0.4)',
+                }}
+              >
+                {isConnecting ? '🔌 CONNECTING...' : '🔌 CONNECT WALLET'}
+              </button>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <div 
+                  className="text-xs px-4 py-2 rounded"
+                  style={{ 
+                    background: 'hsl(var(--gold) / 0.15)',
+                    border: '1px solid hsl(var(--gold) / 0.3)',
+                    color: 'hsl(var(--gold))'
+                  }}
+                >
+                  👤 {publicKey?.substring(0, 8)}...{publicKey?.substring(publicKey.length - 4)}
+                </div>
+                
+                {/* Progress Display */}
+                <div className="flex items-center gap-4 text-xs" style={{ color: 'hsl(var(--gold) / 0.8)' }}>
+                  <span>📊 TRIALS: {progress}/7</span>
+                  {isKing && <span className="animate-pulse">👑 REIGNING KING</span>}
+                </div>
+
+                <button
+                  onClick={disconnect}
+                  className="text-xs px-3 py-1 rounded"
+                  style={{ 
+                    color: 'hsl(var(--gold) / 0.5)',
+                    border: '1px solid hsl(var(--gold) / 0.2)',
+                  }}
+                >
+                  Disconnect
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Enter Button */}
           <button
             onClick={onEnter}
             className="btn-throne text-base px-12 py-5 animate-pulse-gold"

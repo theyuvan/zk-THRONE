@@ -3,9 +3,11 @@ test_snapshots/
 # Build artifacts
 target/
 *.wasm
+throne_contract_optimized.wasm
 
 # Deployment info
 deployment.json
+.zk-image-id
 
 # Bindings
 bindings/

@@ -1,0 +1,16 @@
+[package]
+name = "throne-guest"
+version = "0.1.0"
+edition = "2021"
+
+# Guest programs must compile to RISC-V
+[dependencies]
+risc0-zkvm = { version = "3.0", default-features = false, features = ["std"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+sha2 = { version = "0.10", default-features = false }
+
+[profile.release]
+opt-level = 3
+
+[workspace]
+# Guest is a separate workspace to avoid conflicts

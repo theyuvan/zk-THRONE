@@ -6,10 +6,25 @@ members = [
   "contracts/twenty-one",
   "contracts/number-guess",
   "contracts/dice-duel",
+  "contracts/throne-contract",
+  "contracts/throne-noir",
+  "backend/zk-server",
+]
+
+# Exclude RISC Zero packages from workspace (they have different compile targets and versions)
+exclude = [
+  "backend/zk-throne",
+  "backend/zk-throne/methods/guest",
 ]
 
 [workspace.dependencies]
 soroban-sdk = "25.0.2"
+risc0-zkvm = { version = "1.0", default-features = false }
+risc0-build = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+hex = "0.4"
 
 [profile.release]
 opt-level = "z"
