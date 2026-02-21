@@ -1,0 +1,7 @@
+[package]
+name = "throne"
+type = "bin"
+authors = ["zk-Throne Team"]
+compiler_version = ">=0.32.0"
+
+[dependencies]

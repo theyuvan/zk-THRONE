@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "setup": "bun run scripts/setup.ts",
+    "setup:zk": "bun run scripts/setup-zk.ts",
+    "setup:zk:wsl": "bun run scripts/setup-zk-wsl.ts",
+    "setup:zk:deploy": "bun run scripts/setup-zk.ts --deploy",
     "build": "bun run scripts/build.ts",
     "deploy": "bun run scripts/deploy.ts",
     "bindings": "bun run scripts/bindings.ts",

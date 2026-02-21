@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Shuffle, Info, Check } from 'lucide-react';
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Trial } from '@/types/game';
 import IndividualTrialInfo from './IndividualTrialInfo';
 
@@ -74,6 +74,8 @@ export default function TrialSelection({ isOpen, onClose, onConfirm, mode, allTr
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl bg-void/95 border-2 text-foreground max-h-[90vh] overflow-y-auto" style={{ borderColor: color }}>
+          <DialogTitle className="sr-only">Trial Selection - Choose {mode} Trials</DialogTitle>
+          <DialogDescription className="sr-only">{isFixed ? 'All 7 trials must be completed in order' : `Select ${mode} trials for your arena challenge`}</DialogDescription>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

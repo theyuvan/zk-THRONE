@@ -214,6 +214,7 @@ interface TrialSceneProps {
   totalTrials: number;
   onComplete: () => void;
   onBack: () => void;
+  isSubmitting?: boolean;
 }
 
 // Simple trial mini-games
@@ -383,12 +384,14 @@ function GenericGame({ onSolve, trial }: { onSolve: () => void; trial: Trial }) 
   );
 }
 
-export default function TrialScene({ trial, trialNumber, totalTrials, onComplete, onBack }: TrialSceneProps) {
+export default function TrialScene({ trial, trialNumber, totalTrials, onComplete, onBack, isSubmitting = false }: TrialSceneProps) {
   const [completed, setCompleted] = useState(false);
   const SceneComponent = trialScenes[trial.id] || DefaultTrialScene;
 
   const handleTrialComplete = () => {
     setCompleted(true);
+    // Call parent onComplete which triggers backend submission
+    onComplete();
   };
 
   const GameComponent = (() => {
@@ -511,16 +514,31 @@ export default function TrialScene({ trial, trialNumber, totalTrials, onComplete
                 animate={{ opacity: 1, scale: 1 }}
                 className="panel-arcane p-8 flex flex-col items-center gap-4 text-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
               >
-                <div className="text-5xl animate-pulse-gold">⚡</div>
-                <h3 className="text-2xl font-bold text-gold-glow" style={{ fontFamily: 'var(--font-display)' }}>
-                  TRIAL CONQUERED
-                </h3>
-                <p className="text-sm" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-body)' }}>
-                  The throne recognizes your power
-                </p>
-                <button onClick={onComplete} className="btn-throne text-sm px-10 py-4">
-                  CONTINUE ⚔
-                </button>
+                {isSubmitting ? (
+                  <>
+                    <div className="text-5xl animate-pulse">🔐</div>
+                    <h3 className="text-2xl font-bold text-neon-glow" style={{ fontFamily: 'var(--font-display)' }}>
+                      GENERATING PROOF
+                    </h3>
+                    <p className="text-sm" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-body)' }}>
+                      Preparing transaction for wallet signature...
+                    </p>
+                    <div className="flex items-center gap-2 text-xs opacity-70">
+                      <div className="w-2 h-2 rounded-full bg-neon animate-pulse"></div>
+                      <span>Connecting to blockchain</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-5xl animate-pulse-gold">⚡</div>
+                    <h3 className="text-2xl font-bold text-gold-glow" style={{ fontFamily: 'var(--font-display)' }}>
+                      TRIAL CONQUERED
+                    </h3>
+                    <p className="text-sm" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-body)' }}>
+                      The throne recognizes your power
+                    </p>
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

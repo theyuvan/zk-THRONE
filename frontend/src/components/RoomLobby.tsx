@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Users, Lock, Unlock, Crown, Shield, Swords, ArrowRight, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { RoomInfo, TrialMode } from '@/types/game';
+import { multiplayerService } from '@/services/multiplayerService';
 
 interface RoomLobbyProps {
   isOpen: boolean;
@@ -12,48 +13,12 @@ interface RoomLobbyProps {
   mode: TrialMode;
 }
 
-// Mock data - replace with real data from backend
-const mockRooms: RoomInfo[] = [
-  {
-    roomCode: 'ABC123',
-    roomName: "King's Challenge",
-    hostName: 'Player1',
-    mode: 7,
-    playerCount: 2,
-    maxPlayers: 4,
-    isPublic: true,
-    selectedTrials: [],
-    status: 'waiting',
-  },
-  {
-    roomCode: 'XYZ789',
-    roomName: 'Quick Battle',
-    hostName: 'Champion',
-    mode: 3,
-    playerCount: 1,
-    maxPlayers: 4,
-    isPublic: true,
-    selectedTrials: [],
-    status: 'waiting',
-  },
-  {
-    roomCode: 'DEF456',
-    roomName: 'Elite Arena',
-    hostName: 'ProGamer',
-    mode: 5,
-    playerCount: 3,
-    maxPlayers: 4,
-    isPublic: false,
-    selectedTrials: [],
-    status: 'waiting',
-  },
-];
-
 export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLobbyProps) {
-  const [rooms, setRooms] = useState<RoomInfo[]>(mockRooms);
-  const [selectedRoom, setSelectedRoom] = useState<RoomInfo | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
   const [roomCode, setRoomCode] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const modeColors = {
     3: '#00F0FF',
@@ -69,37 +34,57 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
 
   const color = modeColors[mode];
 
-  const filteredRooms = rooms.filter(room => room.mode === mode && room.status === 'waiting');
+  // Fetch rooms from backend
+  const fetchRooms = async () => {
+    try {
+      setIsRefreshing(true);
+      const result = await multiplayerService.listRooms();
+      console.log('📋 Fetched rooms:', result.rooms);
+      setRooms(result.rooms);
+    } catch (error) {
+      console.error('Failed to fetch rooms:', error);
+    } finally {
+      setIsRefreshing(false);
+      setLoading(false);
+    }
+  };
+
+  // Fetch on open
+  useEffect(() => {
+    if (isOpen) {
+      fetchRooms();
+    }
+  }, [isOpen]);
+
+  const filteredRooms = rooms.filter(room => room.totalRounds === mode && room.status === 'waiting');
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    // TODO: Fetch rooms from backend
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1000);
+    fetchRooms();
   };
 
-  const handleJoinPublic = (room: RoomInfo) => {
-    onJoinRoom(room.roomCode, false);
+  const handleJoinPublic = (room: any) => {
+    onJoinRoom(room.roomId, false);
   };
 
-  const handleJoinPrivate = (room: RoomInfo) => {
+  const handleJoinPrivate = (room: any) => {
     setSelectedRoom(room);
   };
 
   const handleConfirmPrivate = () => {
-    if (selectedRoom && roomCode.toUpperCase() === selectedRoom.roomCode) {
-      onJoinRoom(selectedRoom.roomCode, true);
+    if (selectedRoom && roomCode.toUpperCase() === selectedRoom.joinCode) {
+      onJoinRoom(selectedRoom.roomId, true);
     } else {
       alert('Incorrect room code!');
     }
   };
 
-  const getRoomColor = (roomMode: TrialMode) => modeColors[roomMode];
+  const getRoomColor = (totalRounds: number) => modeColors[totalRounds as TrialMode] || '#00F0FF';
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl bg-void/95 border-2 text-foreground max-h-[90vh] overflow-y-auto" style={{ borderColor: color }}>
+        <DialogTitle className="sr-only">Room Lobby - Available Arenas for {mode} Trials Mode</DialogTitle>
+        <DialogDescription className="sr-only">Browse and join available game rooms or enter a private room code</DialogDescription>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -149,8 +134,8 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
               ) : (
                 <div className="space-y-3 mb-6 max-h-[500px] overflow-y-auto pr-2">
                   {filteredRooms.map((room, index) => {
-                    const ModeIcon = modeIcons[room.mode];
-                    const roomColor = getRoomColor(room.mode);
+                    const ModeIcon = modeIcons[room.totalRounds as TrialMode];
+                    const roomColor = getRoomColor(room.totalRounds);
                     const isFull = room.playerCount >= room.maxPlayers;
 
                     return (
@@ -200,7 +185,7 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
                                   <Users size={12} />
                                   {room.playerCount}/{room.maxPlayers}
                                 </span>
-                                <span>{room.mode} Trials</span>
+                                <span>{room.totalRounds} Trials</span>
                               </div>
                             </div>
                           </div>
@@ -263,11 +248,11 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
                 </p>
               </div>
 
-              <div className="mb-6 p-4 rounded-lg" style={{ background: `${getRoomColor(selectedRoom.mode)}15`, border: `1px solid ${getRoomColor(selectedRoom.mode)}30` }}>
+              <div className="mb-6 p-4 rounded-lg" style={{ background: `${getRoomColor(selectedRoom.totalRounds)}15`, border: `1px solid ${getRoomColor(selectedRoom.totalRounds)}30` }}>
                 <p className="text-sm mb-3 text-center">This is a private arena. Enter the room code to join.</p>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold block" style={{ color: getRoomColor(selectedRoom.mode) }}>
+                  <label className="text-sm font-bold block" style={{ color: getRoomColor(selectedRoom.totalRounds) }}>
                     Room Code
                   </label>
                   <Input
@@ -277,9 +262,9 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
                     maxLength={6}
                     className="text-center text-2xl font-bold tracking-widest"
                     style={{
-                      background: `${getRoomColor(selectedRoom.mode)}10`,
-                      border: `2px solid ${getRoomColor(selectedRoom.mode)}30`,
-                      color: getRoomColor(selectedRoom.mode),
+                      background: `${getRoomColor(selectedRoom.totalRounds)}10`,
+                      border: `2px solid ${getRoomColor(selectedRoom.totalRounds)}30`,
+                      color: getRoomColor(selectedRoom.totalRounds),
                       fontFamily: 'monospace',
                     }}
                   />
@@ -302,10 +287,10 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
                   disabled={roomCode.length !== 6}
                   className="flex-1 px-6 py-3 rounded font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    background: `linear-gradient(135deg, ${getRoomColor(selectedRoom.mode)}20, ${getRoomColor(selectedRoom.mode)}40)`,
-                    border: `2px solid ${getRoomColor(selectedRoom.mode)}`,
-                    color: getRoomColor(selectedRoom.mode),
-                    boxShadow: roomCode.length === 6 ? `0 0 20px ${getRoomColor(selectedRoom.mode)}40` : 'none',
+                    background: `linear-gradient(135deg, ${getRoomColor(selectedRoom.totalRounds)}20, ${getRoomColor(selectedRoom.totalRounds)}40)`,
+                    border: `2px solid ${getRoomColor(selectedRoom.totalRounds)}`,
+                    color: getRoomColor(selectedRoom.totalRounds),
+                    boxShadow: roomCode.length === 6 ? `0 0 20px ${getRoomColor(selectedRoom.totalRounds)}40` : 'none',
                   }}
                 >
                   Join Arena →

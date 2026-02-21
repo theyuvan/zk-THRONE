@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
 import { Users, Plus, LogIn, Copy, Check, Unlock, Lock } from 'lucide-react';
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Trial } from '@/types/game';
+import { useWallet } from '@/hooks/useWallet';
 
 interface MultiplayerSelectionProps {
   isOpen: boolean;
@@ -13,25 +14,49 @@ interface MultiplayerSelectionProps {
   mode: 3 | 5 | 7;
   onShowTrialSelection: () => void;
   onShowRoomLobby: () => void;
+  onRoomCreated: (roomId: string, joinCode: string) => void;
+  createRoom: (maxPlayers: number, totalRounds: number) => Promise<{
+    success: boolean;
+    roomId: string;
+    joinCode: string;
+  }>;
 }
 
-export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, mode, onShowTrialSelection, onShowRoomLobby }: MultiplayerSelectionProps) {
+export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, mode, onShowTrialSelection, onShowRoomLobby, onRoomCreated, createRoom }: MultiplayerSelectionProps) {
   const [selectedOption, setSelectedOption] = useState<'host' | 'join' | null>(null);
   const [roomCode, setRoomCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [isPublicRoom, setIsPublicRoom] = useState(true);
   const [roomName, setRoomName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  
+  const { isConnected, connect, publicKey } = useWallet();
 
-  const generateRoomCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setGeneratedCode(code);
-    return code;
-  };
+  const handleHost = async () => {
+    try {
+      // Check wallet connection
+      if (!isConnected) {
+        await connect();
+        return;
+      }
 
-  const handleHost = () => {
-    generateRoomCode();
-    setSelectedOption('host');
+      setIsCreating(true);
+      
+      // Create room on backend
+      const result = await createRoom(4, mode); // 4 players, N trials (mode)
+      
+      console.log('✅ Room created:', result);
+      
+      // Notify parent component (don't close dialog - parent will handle it)
+      onRoomCreated(result.roomId, result.joinCode);
+      
+    } catch (error) {
+      console.error('❌ Failed to create room:', error);
+      alert('Failed to create room. Please make sure your wallet is connected and try again.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleCopyCode = () => {
@@ -61,6 +86,8 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg bg-void/95 border-2 text-foreground" style={{ borderColor: color }}>
+        <DialogTitle className="sr-only">Multiplayer Arena - {mode} Trials Challenge</DialogTitle>
+        <DialogDescription className="sr-only">Choose to host a new game room or join an existing arena</DialogDescription>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -94,7 +121,7 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
             </p>
           </div>
 
-          {!selectedOption ? (
+          {!selectedOption && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -102,10 +129,11 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
             >
               {/* Host Option */}
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: isCreating ? 1 : 1.02 }}
+                whileTap={{ scale: isCreating ? 1 : 0.98 }}
                 onClick={handleHost}
-                className="w-full p-6 rounded-lg border-2 transition-all duration-300 hover:shadow-lg"
+                disabled={isCreating}
+                className="w-full p-6 rounded-lg border-2 transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-wait"
                 style={{
                   borderColor: color,
                   background: `${color}10`,
@@ -121,9 +149,11 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
                   </div>
                   <div className="text-left flex-1">
                     <h3 className="text-xl font-bold mb-1" style={{ color, fontFamily: 'var(--font-display)' }}>
-                      HOST ARENA
+                      {isCreating ? 'CREATING ROOM...' : 'HOST ARENA'}
                     </h3>
-                    <p className="text-sm opacity-70">Create a new game room and invite challengers</p>
+                    <p className="text-sm opacity-70">
+                      {isCreating ? 'Connecting to backend...' : 'Create a new game room and invite challengers'}
+                    </p>
                   </div>
                 </div>
               </motion.button>
@@ -164,126 +194,7 @@ export default function MultiplayerSelection({ isOpen, onClose, onHost, onJoin, 
                 Back
               </button>
             </motion.div>
-          ) : selectedOption === 'host' ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              {/* Room Name Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-bold block" style={{ color }}>
-                  Room Name
-                </label>
-                <Input
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="My Awesome Arena"
-                  maxLength={30}
-                  className="text-lg"
-                  style={{
-                    background: `${color}10`,
-                    border: `2px solid ${color}30`,
-                    color,
-                  }}
-                />
-              </div>
-
-              {/* Room Visibility Toggle */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold block" style={{ color }}>
-                  Room Visibility
-                </label>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsPublicRoom(true)}
-                    className="p-4 rounded-lg border-2 transition-all duration-300"
-                    style={{
-                      borderColor: isPublicRoom ? '#00F0FF' : 'hsl(var(--border))',
-                      background: isPublicRoom ? '#00F0FF15' : 'hsl(var(--card))',
-                      boxShadow: isPublicRoom ? '0 0 20px #00F0FF40' : 'none',
-                    }}
-                  >
-                    <Unlock size={24} className="mx-auto mb-2" style={{ color: '#00F0FF' }} />
-                    <p className="text-sm font-bold mb-1" style={{ color: '#00F0FF' }}>PUBLIC</p>
-                    <p className="text-xs opacity-70">Anyone can join</p>
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setIsPublicRoom(false)}
-                    className="p-4 rounded-lg border-2 transition-all duration-300"
-                    style={{
-                      borderColor: !isPublicRoom ? '#FF2E63' : 'hsl(var(--border))',
-                      background: !isPublicRoom ? '#FF2E6315' : 'hsl(var(--card))',
-                      boxShadow: !isPublicRoom ? '0 0 20px #FF2E6340' : 'none',
-                    }}
-                  >
-                    <Lock size={24} className="mx-auto mb-2" style={{ color: '#FF2E63' }} />
-                    <p className="text-sm font-bold mb-1" style={{ color: '#FF2E63' }}>PRIVATE</p>
-                    <p className="text-xs opacity-70">Requires code</p>
-                  </motion.button>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-lg text-center" style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
-                <p className="text-sm mb-3 opacity-70">Your Room Code</p>
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <div
-                    className="text-3xl font-bold tracking-widest px-6 py-3 rounded"
-                    style={{ background: `${color}30`, color, fontFamily: 'monospace' }}
-                  >
-                    {generatedCode}
-                  </div>
-                  <button
-                    onClick={handleCopyCode}
-                    className="p-3 rounded transition-all"
-                    style={{ background: `${color}20`, border: `1px solid ${color}` }}
-                  >
-                    {copied ? <Check size={20} style={{ color }} /> : <Copy size={20} style={{ color }} />}
-                  </button>
-                </div>
-                <p className="text-xs opacity-60">
-                  {isPublicRoom 
-                    ? 'Room will be visible in lobby. Code optional for direct join.'
-                    : 'Share this code with players to join your private arena.'
-                  }
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setSelectedOption(null);
-                    setGeneratedCode('');
-                    setRoomName('');
-                    setIsPublicRoom(true);
-                  }}
-                  className="flex-1 px-6 py-3 rounded border-2 transition-all duration-300 hover:bg-white/5"
-                  style={{ borderColor: 'hsl(var(--border))' }}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleProceedToTrialSelection}
-                  disabled={!roomName.trim()}
-                  className="flex-1 px-6 py-3 rounded font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background: `linear-gradient(135deg, ${color}20, ${color}40)`,
-                    border: `2px solid ${color}`,
-                    color,
-                    boxShadow: roomName.trim() ? `0 0 20px ${color}40` : 'none',
-                  }}
-                >
-                  Select Trials →
-                </button>
-              </div>
-            </motion.div>
-          ) : null}
+          )}
         </motion.div>
       </DialogContent>
     </Dialog>

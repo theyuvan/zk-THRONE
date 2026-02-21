@@ -3,6 +3,7 @@ export type GameScene =
   | 'portalRoom'
   | 'trial'
   | 'proof'
+  | 'leaderboard'
   | 'throneClaim'
   | 'kingReveal';
 
@@ -33,15 +34,14 @@ export interface MultiplayerInfo {
 }
 
 export interface RoomInfo {
-  roomCode: string;
-  roomName: string;
-  hostName: string;
-  mode: TrialMode;
+  roomId: string;
+  joinCode: string;
+  hostWallet: string;
+  totalRounds: number;
   playerCount: number;
   maxPlayers: number;
-  isPublic: boolean;
-  selectedTrials: Trial[];
   status: 'waiting' | 'starting' | 'in-progress';
+  createdAt?: string;
 }
 
 export interface GameState {
