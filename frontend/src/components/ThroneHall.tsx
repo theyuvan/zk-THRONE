@@ -98,6 +98,45 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
         }}
       />
 
+      {/* Wallet Button - Top Right Corner */}
+      <div className="absolute top-6 right-6 z-50 pointer-events-auto">
+        {!isConnected ? (
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 1 }}
+            onClick={connect}
+            disabled={isConnecting}
+            className="px-4 py-2 rounded-lg font-bold text-sm transition-all duration-300"
+            style={{ 
+              background: 'linear-gradient(135deg, hsl(var(--gold) / 0.2), hsl(var(--neon) / 0.2))',
+              border: '1px solid hsl(var(--gold) / 0.5)',
+              color: 'hsl(var(--gold))',
+            }}
+          >
+            {isConnecting ? '🔌 Connecting...' : '🔌 Connect Wallet'}
+          </motion.button>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 1 }}
+            className="flex flex-col items-end gap-2"
+          >
+            <div 
+              className="px-4 py-2 rounded-lg text-sm font-mono"
+              style={{ 
+                background: 'hsl(var(--gold) / 0.2)',
+                border: '1px solid hsl(var(--gold) / 0.5)',
+                color: 'hsl(var(--gold))',
+              }}
+            >
+              {publicKey?.substring(0, 6)}...{publicKey?.substring(publicKey.length - 4)}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-between pointer-events-none">
         {/* Top header */}
@@ -105,21 +144,21 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.5 }}
-          className="pt-8 text-center"
+          className="pt-6 text-center"
         >
-          <div className="energy-line w-48 mx-auto mb-4" />
+          <div className="energy-line w-48 mx-auto mb-3" />
           <p className="text-xs tracking-[0.4em] font-body" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-body)' }}>
             ZERO-KNOWLEDGE SOVEREIGNTY ARENA
           </p>
-          <div className="energy-line w-48 mx-auto mt-4" />
+          <div className="energy-line w-48 mx-auto mt-3" />
         </motion.div>
 
-        {/* Center title */}
+        {/* Center title - moved higher */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.2, delay: 0.8 }}
-          className="text-center"
+          className="text-center" style={{ marginTop: '-8rem' }}
         >
           <h1
             className="text-7xl md:text-9xl font-bold mb-2 animate-shimmer"
@@ -139,7 +178,7 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
           transition={{ duration: 1, delay: 1.2 }}
           className="pb-16 flex flex-col items-center gap-6 pointer-events-auto"
         >
-          {/* Wallet & Status Section */}
+          {/* Backend Status & Info */}
           <div className="flex flex-col items-center gap-4 mb-4">
             {/* Backend Status Indicator */}
             <div className="flex items-center gap-2 text-xs">
@@ -151,49 +190,12 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
                 {backendHealthy ? 'ZK BACKEND ONLINE' : 'ZK BACKEND OFFLINE'}
               </span>
             </div>
-
-            {/* Wallet Connection */}
-            {!isConnected ? (
-              <button
-                onClick={connect}
-                disabled={isConnecting}
-                className="btn-throne text-sm px-8 py-3"
-                style={{ 
-                  background: 'linear-gradient(135deg, hsl(var(--gold) / 0.2), hsl(var(--neon) / 0.2))',
-                  border: '1px solid hsl(var(--gold) / 0.4)',
-                }}
-              >
-                {isConnecting ? '🔌 CONNECTING...' : '🔌 CONNECT WALLET'}
-              </button>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div 
-                  className="text-xs px-4 py-2 rounded"
-                  style={{ 
-                    background: 'hsl(var(--gold) / 0.15)',
-                    border: '1px solid hsl(var(--gold) / 0.3)',
-                    color: 'hsl(var(--gold))'
-                  }}
-                >
-                  👤 {publicKey?.substring(0, 8)}...{publicKey?.substring(publicKey.length - 4)}
-                </div>
-                
-                {/* Progress Display */}
-                <div className="flex items-center gap-4 text-xs" style={{ color: 'hsl(var(--gold) / 0.8)' }}>
-                  <span>📊 TRIALS: {progress}/7</span>
-                  {isKing && <span className="animate-pulse">👑 REIGNING KING</span>}
-                </div>
-
-                <button
-                  onClick={disconnect}
-                  className="text-xs px-3 py-1 rounded"
-                  style={{ 
-                    color: 'hsl(var(--gold) / 0.5)',
-                    border: '1px solid hsl(var(--gold) / 0.2)',
-                  }}
-                >
-                  Disconnect
-                </button>
+            
+            {/* Show progress and king status if connected */}
+            {isConnected && (
+              <div className="flex items-center gap-4 text-xs" style={{ color: 'hsl(var(--gold) / 0.8)' }}>
+                <span>📊 TRIALS: {progress}/7</span>
+                {isKing && <span className="animate-pulse">👑 REIGNING KING</span>}
               </div>
             )}
           </div>

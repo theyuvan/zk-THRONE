@@ -12,6 +12,7 @@ import TrialSelection from '@/components/TrialSelection';
 import RoomLobby from '@/components/RoomLobby';
 import WaitingLobby from '@/components/WaitingLobby';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { useWallet } from '@/hooks/useWallet';
 
 interface PortalRoomProps {
   onSelectMode: (mode: TrialMode, trials: Trial[], multiplayerInfo?: import('@/types/game').MultiplayerInfo) => void;
@@ -33,6 +34,7 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
   
   // Get multiplayer state from hook (single source of truth)
   const { joinRoom, currentRoom, isHost, countdown, startGame: multiplayerStartGame, createRoom } = useMultiplayer();
+  const { publicKey, isConnected, connect, isConnecting } = useWallet();
 
   const modes: { count: TrialMode; label: string; subtitle: string; color: string }[] = [
     { count: 1, label: '1 TRIAL', subtitle: 'Initiate Path', color: 'hsl(var(--neon))' },
@@ -196,6 +198,22 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
         className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at center, transparent 20%, hsl(240 20% 4% / 0.8) 100%)' }}
       />
+
+      {/* Wallet Button - Top Right */}
+      <div className="absolute top-6 right-6 z-50 pointer-events-auto">
+        {isConnected && publicKey && (
+          <div 
+            className="px-4 py-2 rounded-lg text-sm font-mono"
+            style={{ 
+              background: 'hsl(var(--gold) / 0.2)',
+              border: '1px solid hsl(var(--gold) / 0.5)',
+              color: 'hsl(var(--gold))',
+            }}
+          >
+            {publicKey.substring(0, 6)}...{publicKey.substring(publicKey.length - 4)}
+          </div>
+        )}
+      </div>
 
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-between pointer-events-none">

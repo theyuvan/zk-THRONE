@@ -132,7 +132,7 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
                   <p className="text-sm opacity-40">Be the first to create one!</p>
                 </div>
               ) : (
-                <div className="space-y-3 mb-6 max-h-[500px] overflow-y-auto pr-2">
+                <div className="space-y-3 mb-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                   {filteredRooms.map((room, index) => {
                     const ModeIcon = modeIcons[room.totalRounds as TrialMode];
                     const roomColor = getRoomColor(room.totalRounds);
