@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { motion } from 'framer-motion';
@@ -95,10 +95,28 @@ function RotatingRing({ radius, speed, color }: { radius: number; speed: number;
 }
 
 interface KingRevealProps {
-  onRestart: () => void;
+  onRestart?: () => void;
+  onContinue?: () => void;
+  winnerName?: string;
+  isMultiplayer?: boolean;
+  isCurrentPlayerWinner?: boolean;
 }
 
-export default function KingReveal({ onRestart }: KingRevealProps) {
+export default function KingReveal({ 
+  onRestart, 
+  onContinue, 
+  winnerName, 
+  isMultiplayer = false,
+  isCurrentPlayerWinner = true 
+}: KingRevealProps) {
+  // Auto-advance to leaderboard after 15 seconds in multiplayer mode
+  useEffect(() => {
+    if (isMultiplayer && onContinue) {
+      const timer = setTimeout(() => onContinue(), 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [isMultiplayer, onContinue]);
+
   return (
     <div className="relative w-full h-screen bg-void overflow-hidden">
       <Canvas camera={{ position: [0, 2, 7], fov: 55 }}>
@@ -148,13 +166,13 @@ export default function KingReveal({ onRestart }: KingRevealProps) {
             className="text-5xl md:text-8xl font-bold mb-4"
             style={{ fontFamily: 'var(--font-display)', color: 'hsl(var(--gold))', textShadow: 'var(--glow-gold)' }}
           >
-            NEW KING
+            {isMultiplayer ? (isCurrentPlayerWinner ? 'VICTORY' : 'DEFEATED') : 'NEW KING'}
           </h1>
           <h2
             className="text-4xl md:text-6xl font-bold animate-shimmer"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            CROWNED
+            {isMultiplayer ? (winnerName || 'CHAMPION') : 'CROWNED'}
           </h2>
           <div className="energy-line w-64 mx-auto mt-6" />
         </motion.div>
@@ -190,12 +208,25 @@ export default function KingReveal({ onRestart }: KingRevealProps) {
           transition={{ delay: 2.5, duration: 1 }}
           className="pb-12 flex flex-col items-center gap-4 pointer-events-auto"
         >
-          <button onClick={onRestart} className="btn-throne text-sm px-12 py-4">
-            ⚔ CHALLENGE THE THRONE AGAIN ⚔
-          </button>
-          <p className="text-xs tracking-widest" style={{ color: 'hsl(var(--gold) / 0.4)', fontFamily: 'var(--font-body)' }}>
-            THE VOID REMEMBERS YOUR NAME
-          </p>
+          {isMultiplayer ? (
+            <>
+              <button onClick={onContinue} className="btn-throne text-sm px-12 py-4">
+                🏆 VIEW LEADERBOARD 🏆
+              </button>
+              <p className="text-xs tracking-widest" style={{ color: 'hsl(var(--gold) / 0.4)', fontFamily: 'var(--font-body)' }}>
+                Auto-advancing in 15 seconds...
+              </p>
+            </>
+          ) : (
+            <>
+              <button onClick={onRestart} className="btn-throne text-sm px-12 py-4">
+                ⚔ CHALLENGE THE THRONE AGAIN ⚔
+              </button>
+              <p className="text-xs tracking-widest" style={{ color: 'hsl(var(--gold) / 0.4)', fontFamily: 'var(--font-body)' }}>
+                THE VOID REMEMBERS YOUR NAME
+              </p>
+            </>
+          )}
         </motion.div>
       </div>
 

@@ -195,6 +195,33 @@ class WalletService {
   isConnected(): boolean {
     return this.state.isConnected;
   }
+
+  /**
+   * Clear all user data and reset wallet state
+   */
+  async clearAllData() {
+    try {
+      // Disconnect wallet first
+      await this.disconnect();
+      
+      // Clear all localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        console.log("🗑️  All user data cleared");
+      }
+      
+      // Reset state
+      this.state = {
+        publicKey: null,
+        isConnected: false,
+      };
+      
+      this.notify();
+    } catch (error) {
+      console.error("Failed to clear data:", error);
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

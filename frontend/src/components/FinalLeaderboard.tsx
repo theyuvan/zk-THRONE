@@ -9,28 +9,36 @@ import { useMultiplayer } from "@/hooks/useMultiplayer";
 import { useWallet } from "@/hooks/useWallet";
 import { FinalResults } from "@/services/multiplayerService";
 
-export function FinalLeaderboard() {
+interface FinalLeaderboardProps {
+  roomId?: string;
+}
+
+export function FinalLeaderboard({ roomId: propRoomId }: FinalLeaderboardProps) {
   const { currentRoom, getFinalResults } = useMultiplayer();
   const { publicKey } = useWallet();
   const [results, setResults] = useState<FinalResults | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
+  const [error, setError] = useState<string | null>(null);
 
+  // Get roomId from prop or currentRoom
+  const roomId = propRoomId || currentRoom?.roomId;
+
+  // Fetch results immediately on mount
   useEffect(() => {
-    // Auto-fetch results when game finishes
-    if (currentRoom?.state === "FINISHED" && !results) {
-      console.log('🏆 Game finished! Fetching leaderboard...');
-      fetchResults();
-    }
-  }, [currentRoom?.state]);
+    fetchResults();
+  }, []); // Run once on mount
 
   const fetchResults = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const data = await getFinalResults();
+      console.log('🏆 Fetching final results for room:', roomId);
+      const data = await getFinalResults(roomId);
       console.log('📊 Leaderboard loaded:', data);
       setResults(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch results:", error);
+      setError(error.message || "Failed to load results");
     } finally {
       setLoading(false);
     }
@@ -49,23 +57,44 @@ export function FinalLeaderboard() {
     );
   }
 
-  // Show waiting message if results not ready yet (other players still playing)
-  if (!results) {
-    const isWaiting = currentRoom?.state !== "FINISHED";
+  // Show error state if fetch failed
+  if (error) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
         <div className="text-center px-8">
-          {isWaiting ? (
+          <p className="text-3xl text-red-400 mb-4">❌ Error Loading Results</p>
+          <p className="text-lg text-gray-400 mb-6">{error}</p>
+          <button
+            onClick={fetchResults}
+            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-bold transition-all"
+          >
+            🔄 Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show waiting message if results not ready yet (other players still playing)
+  if (!results) {
+    const isGameFinished = currentRoom?.state === "FINISHED";
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
+        <div className="text-center px-8">
+          {isGameFinished ? (
+            <>
+              <p className="text-3xl text-yellow-400 mb-4">🏆 Game Complete! 🏆</p>
+              <p className="text-xl text-cyan-400 animate-pulse">
+                📊 Loading final results...
+              </p>
+            </>
+          ) : (
             <>
               <p className="text-3xl text-yellow-400 mb-4">✨ You finished all trials! ✨</p>
               <p className="text-xl text-cyan-400 animate-pulse">
                 ⏳ Waiting for other players to complete...
               </p>
             </>
-          ) : (
-            <p className="text-xl text-cyan-400 animate-pulse">
-              🏆 Loading results...
-            </p>
           )}
         </div>
       </div>
@@ -174,7 +203,11 @@ export function FinalLeaderboard() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            // Clear localStorage before reloading
+            localStorage.clear();
+            window.location.reload();
+          }}
           className="w-full py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-lg transition-colors"
         >
           Play Again

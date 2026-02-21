@@ -4,7 +4,7 @@
  * This file demonstrates how to integrate the ZK + Soroban backend
  * with your frontend trial system.
  */
-
+/**
 import React, { useState } from 'react';
 import * as StellarSdk from '@stellar/stellar-sdk';
 
@@ -50,6 +50,7 @@ interface PlayerProgress {
 /**
  * Encode trial solutions into bytes for ZK proof
  */
+/**
 function encodeSolution(trialId: string, solution: any): Uint8Array {
   switch (trialId) {
     case 'colorSigil':
@@ -93,6 +94,7 @@ function encodeSolution(trialId: string, solution: any): Uint8Array {
 /**
  * Generate ZK proof for trial solution
  */
+/**
 async function generateProof(
   trialId: string,
   solution: any,
@@ -141,6 +143,7 @@ async function generateProof(
 /**
  * Submit proof to Soroban contract
  */
+/**
 async function submitProof(
   proof: ZKProof,
   playerKeypair: StellarSdk.Keypair,
@@ -203,6 +206,7 @@ async function submitProof(
 /**
  * Get player progress from contract
  */
+/**
 async function getPlayerProgress(
   playerAddress: string,
   roundId: number
@@ -245,7 +249,7 @@ async function getPlayerProgress(
 
 /**
  * Get current King for round
- */
+
 async function getKing(roundId: number): Promise<string | null> {
   const server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
   const contract = new StellarSdk.Contract(CONFIG.contractId);
@@ -264,7 +268,7 @@ async function getKing(roundId: number): Promise<string | null> {
  * Complete trial and submit proof
  * 
  * This is the main function to call from trial components
- */
+
 async function completeTrial(
   trialId: string,
   solution: any,
@@ -310,8 +314,7 @@ async function completeTrial(
 // ============================================================================
 
 /**
- * Example React component integrating ZK proof system
- */
+
 function ColorSigilTrialWithZK() {
   const [solution, setSolution] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -354,7 +357,8 @@ function ColorSigilTrialWithZK() {
     <div>
       <h2>Color Sigil Trial</h2>
       
-      {/* Trial UI here */}
+      {/* Trial UI here */
+    /**}
       
       <button
         onClick={handleComplete}
@@ -375,7 +379,7 @@ function ColorSigilTrialWithZK() {
 /**
  * Decode Soroban ScVal to PlayerProgress
  * (Adjust based on actual Soroban encoding)
- */
+ 
 function decodePlayerProgress(scVal: StellarSdk.xdr.ScVal): PlayerProgress {
   // This is a placeholder - actual implementation depends on Soroban encoding
   // You'll need to use StellarSdk.scValToNative() with proper structure
@@ -391,7 +395,7 @@ function decodePlayerProgress(scVal: StellarSdk.xdr.ScVal): PlayerProgress {
 
 /**
  * Health check for ZK server
- */
+ 
 async function checkZKServerHealth(): Promise<boolean> {
   try {
     const response = await fetch(`${CONFIG.zkServerUrl}/health`);
@@ -422,7 +426,7 @@ class ContractError extends Error {
 
 /**
  * Wrapper with better error handling
- */
+ 
 async function completeTrialSafe(
   trialId: string,
   solution: any,
@@ -484,6 +488,7 @@ export {
   ZKProofError,
   ContractError,
 };
+/**
 
 // ============================================================================
 // USAGE IN YOUR TRIAL COMPONENTS

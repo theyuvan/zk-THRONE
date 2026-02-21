@@ -101,13 +101,13 @@ export default function WaitingLobby({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-void/95 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-void/95 backdrop-blur-sm p-8"
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className="panel-arcane p-8 max-w-2xl w-full mx-4"
+        className="panel-arcane p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar"
         style={{
           border: '2px solid hsl(var(--gold))',
           boxShadow: '0 0 40px hsl(var(--gold) / 0.3)',
@@ -182,7 +182,7 @@ export default function WaitingLobby({
             </div>
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
             {currentRoom?.players.map((player, i) => (
               <motion.div
                 key={player.wallet}

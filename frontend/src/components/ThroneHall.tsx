@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import { Throne, FloatingCrown, ArenaPlatform } from '@/components/3d/ThroneObjects';
 import ParticleField from '@/components/effects/ParticleField';
 import { TRIALS } from '@/types/game';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useWallet } from '@/hooks/useWallet';
 import { useGame } from '@/hooks/useGame';
+import { walletService } from '@/services/walletService';
 
 function FloatingPortalMini({ index }: { index: number }) {
   const ref = useRef<THREE.Mesh>(null);
@@ -74,6 +75,23 @@ interface ThroneHallProps {
 export default function ThroneHall({ onEnter }: ThroneHallProps) {
   const { publicKey, isConnected, isConnecting, connect, disconnect } = useWallet();
   const { progress, king, isKing, backendHealthy } = useGame();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const handleResetAllData = async () => {
+    if (!showResetConfirm) {
+      setShowResetConfirm(true);
+      return;
+    }
+
+    try {
+      await walletService.clearAllData();
+      setShowResetConfirm(false);
+      window.location.reload(); // Refresh to start fresh
+    } catch (error) {
+      console.error('Failed to reset data:', error);
+      alert('Failed to reset data. Please try again.');
+    }
+  };
 
   return (
     <div className="relative w-full h-screen bg-void overflow-hidden">
@@ -99,7 +117,7 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
       />
 
       {/* Wallet Button - Top Right Corner */}
-      <div className="absolute top-6 right-6 z-50 pointer-events-auto">
+      <div className="absolute top-6 right-6 z-50 pointer-events-auto flex flex-col gap-2">
         {!isConnected ? (
           <motion.button
             initial={{ opacity: 0, x: 20 }}
@@ -121,7 +139,7 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 1 }}
-            className="flex flex-col items-end gap-2"
+            className="flex items-center gap-2"
           >
             <div 
               className="px-4 py-2 rounded-lg text-sm font-mono"
@@ -133,8 +151,38 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
             >
               {publicKey?.substring(0, 6)}...{publicKey?.substring(publicKey.length - 4)}
             </div>
+            <button
+              onClick={disconnect}
+              className="px-3 py-2 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105"
+              style={{ 
+                background: 'hsl(var(--void) / 0.8)',
+                border: '1px solid hsl(var(--gold) / 0.3)',
+                color: 'hsl(var(--gold) / 0.7)',
+              }}
+              title="Disconnect Wallet"
+            >
+              ✕
+            </button>
           </motion.div>
         )}
+
+        {/* Reset Data Button */}
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, delay: 1.2 }}
+          onClick={handleResetAllData}
+          onMouseLeave={() => setShowResetConfirm(false)}
+          className="px-3 py-2 rounded-lg text-xs font-bold transition-all duration-300 hover:scale-105"
+          style={{ 
+            background: showResetConfirm ? 'hsl(0 70% 50% / 0.3)' : 'hsl(var(--void) / 0.6)',
+            border: showResetConfirm ? '1px solid hsl(0 70% 50% / 0.7)' : '1px solid hsl(var(--gold) / 0.2)',
+            color: showResetConfirm ? 'hsl(0 70% 70%)' : 'hsl(var(--gold) / 0.5)',
+          }}
+          title="Clear all user data and start fresh"
+        >
+          {showResetConfirm ? '⚠️ Click Again to Confirm' : '🗑️ Reset Data'}
+        </motion.button>
       </div>
 
       {/* UI Overlay */}
@@ -158,7 +206,7 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.2, delay: 0.8 }}
-          className="text-center" style={{ marginTop: '-8rem' }}
+          className="text-center" style={{ marginTop: '-17rem' }}
         >
           <h1
             className="text-7xl md:text-9xl font-bold mb-2 animate-shimmer"
@@ -193,9 +241,14 @@ export default function ThroneHall({ onEnter }: ThroneHallProps) {
             
             {/* Show progress and king status if connected */}
             {isConnected && (
-              <div className="flex items-center gap-4 text-xs" style={{ color: 'hsl(var(--gold) / 0.8)' }}>
-                <span>📊 TRIALS: {progress}/7</span>
-                {isKing && <span className="animate-pulse">👑 REIGNING KING</span>}
+              <div className="flex flex-col items-center gap-1 text-xs" style={{ color: 'hsl(var(--gold) / 0.8)' }}>
+                <div className="flex items-center gap-4">
+                  <span>📊 CAREER PROGRESS: {progress}/7</span>
+                  {isKing && <span className="animate-pulse">👑 REIGNING KING</span>}
+                </div>
+                <span className="text-[10px]" style={{ color: 'hsl(var(--gold) / 0.5)' }}>
+                  (Total trials completed on-chain)
+                </span>
               </div>
             )}
           </div>

@@ -60,6 +60,15 @@ class ThroneContractService {
       console.log("🔗 Submitting proof to contract...");
       console.log("📝 Attestation:", attestation);
 
+      // STEP 0: Get player's current on-chain progress
+      // The contract requires trial_round_id = progress + 1
+      const currentProgress = await this.getProgress(publicKey);
+      const expectedTrialRoundId = currentProgress + 1;
+      
+      console.log(`📊 Player on-chain progress: ${currentProgress}`);
+      console.log(`🎯 Expected trial_round_id: ${expectedTrialRoundId}`);
+      console.log(`📋 Attestation roundId: ${attestation.roundId} (game round, not used)`);
+
       // STEP 1: Load source account
       const sourceAccount = await this.server.getAccount(publicKey);
 
@@ -96,13 +105,14 @@ class ThroneContractService {
       });
       
       // Build contract call with trial_round_id parameter
+      // Use on-chain progress + 1, NOT the game roundId!
       const operation = this.contract.call(
         "submit_proof",
         playerAddress.toScVal(),
         solutionHashScVal,
         signatureScVal,
         nativeToScVal(attestation.nonce, { type: "u64" }),
-        nativeToScVal(attestation.roundId, { type: "u32" })  // trial_round_id (1, 2, 3...)
+        nativeToScVal(expectedTrialRoundId, { type: "u32" })  // trial_round_id based on on-chain progress
       );
 
       // STEP 4: Build transaction with higher fee for Soroban

@@ -97,7 +97,7 @@ export function TrialComponent() {
           >
             <h3>📊 Game Status</h3>
             <p>
-              <strong>Trials Completed:</strong> {progress} / 7
+              <strong>Career Trials Completed:</strong> {progress} / 7 (on-chain)
             </p>
             <p>
               <strong>Current King:</strong> {king || "None"}

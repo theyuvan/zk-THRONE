@@ -34,7 +34,7 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
   
   // Get multiplayer state from hook (single source of truth)
   const { joinRoom, currentRoom, isHost, countdown, startGame: multiplayerStartGame, createRoom } = useMultiplayer();
-  const { publicKey, isConnected, connect, isConnecting } = useWallet();
+  const { publicKey, isConnected, connect, disconnect, isConnecting } = useWallet();
 
   const modes: { count: TrialMode; label: string; subtitle: string; color: string }[] = [
     { count: 1, label: '1 TRIAL', subtitle: 'Initiate Path', color: 'hsl(var(--neon))' },
@@ -117,11 +117,13 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
       if (result && result.roomState) {
         setPendingMode(result.roomState.totalRounds as TrialMode);
         console.log(`🎯 Set pending mode to: ${result.roomState.totalRounds}`);
+        
+        // Show WaitingLobby (not as host) - use actual join code from room
+        setWaitingRoom({ roomId: result.roomState.roomId, joinCode: result.roomState.joinCode });
+        setShowRoomLobby(false);
+      } else {
+        console.error('❌ No room state returned from joinRoom');
       }
-      
-      // Show WaitingLobby (not as host)
-      setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
-      setShowRoomLobby(false);
       
       console.log('✅ Joined room successfully, showing WaitingLobby');
     } catch (error) {
@@ -141,11 +143,13 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
       if (result && result.roomState) {
         setPendingMode(result.roomState.totalRounds as TrialMode);
         console.log(`🎯 Set pending mode to: ${result.roomState.totalRounds}`);
+        
+        // Show WaitingLobby (not as host) - use actual join code from room
+        setWaitingRoom({ roomId: result.roomState.roomId, joinCode: result.roomState.joinCode });
+        setShowMultiplayerDialog(false);
+      } else {
+        console.error('❌ No room state returned from joinRoom');
       }
-      
-      // Show WaitingLobby (not as host)
-      setWaitingRoom({ roomId: roomCode, joinCode: roomCode });
-      setShowMultiplayerDialog(false);
       
       console.log('✅ Joined room successfully, showing WaitingLobby');
     } catch (error) {
@@ -202,15 +206,29 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
       {/* Wallet Button - Top Right */}
       <div className="absolute top-6 right-6 z-50 pointer-events-auto">
         {isConnected && publicKey && (
-          <div 
-            className="px-4 py-2 rounded-lg text-sm font-mono"
-            style={{ 
-              background: 'hsl(var(--gold) / 0.2)',
-              border: '1px solid hsl(var(--gold) / 0.5)',
-              color: 'hsl(var(--gold))',
-            }}
-          >
-            {publicKey.substring(0, 6)}...{publicKey.substring(publicKey.length - 4)}
+          <div className="flex items-center gap-2">
+            <div 
+              className="px-4 py-2 rounded-lg text-sm font-mono"
+              style={{ 
+                background: 'hsl(var(--gold) / 0.2)',
+                border: '1px solid hsl(var(--gold) / 0.5)',
+                color: 'hsl(var(--gold))',
+              }}
+            >
+              {publicKey.substring(0, 6)}...{publicKey.substring(publicKey.length - 4)}
+            </div>
+            <button
+              onClick={disconnect}
+              className="px-3 py-2 rounded-lg text-sm font-bold transition-all duration-300 hover:scale-105"
+              style={{ 
+                background: 'hsl(var(--void) / 0.8)',
+                border: '1px solid hsl(var(--gold) / 0.3)',
+                color: 'hsl(var(--gold) / 0.7)',
+              }}
+              title="Disconnect Wallet"
+            >
+              ✕
+            </button>
           </div>
         )}
       </div>
