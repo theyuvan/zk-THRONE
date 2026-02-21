@@ -96,24 +96,29 @@ export function useMultiplayer() {
    * 1. Backend verifies ZK proof
    * 2. Backend returns attestation  
    * 3. Submit attestation to contract on-chain
+   * 
+   * Players progress independently - no waiting!
    */
-  const submitSolution = useCallback(async (solution: string) => {
+  const submitSolution = useCallback(async (solution: string, roundId: number) => {
     if (!currentRoom) throw new Error("Not in a room");
 
     try {
       const wallet = walletService.getPublicKey();
       if (!wallet) throw new Error("Wallet not connected");
 
-      console.log("📝 Submitting solution to backend...");
+      console.log(`📝 Submitting solution for round ${roundId} to backend...`);
       
       // STEP 1: Submit to backend - generates ZK proof & verifies
       const result = await multiplayerService.submitRoundProof(
         currentRoom.roomId,
         wallet,
-        solution
+        solution,
+        roundId  // Send player's current round
       );
 
       console.log("✅ Backend verified proof! Attestation:", result.attestation);
+      console.log("📊 Player finished:", result.playerFinished);
+      console.log("🏁 All players finished:", result.allPlayersFinished);
 
       // STEP 2: Submit attestation to contract on-chain
       // Import throneContractService
@@ -128,7 +133,8 @@ export function useMultiplayer() {
 
       return {
         success: true,
-        roundComplete: result.roundComplete,
+        playerFinished: result.playerFinished,
+        allPlayersFinished: result.allPlayersFinished,
         txHash: contractResult.txHash,
       };
     } catch (error: any) {

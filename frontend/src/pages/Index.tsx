@@ -8,6 +8,7 @@ import ThroneClaim from '@/components/ThroneClaim';
 import KingReveal from '@/components/KingReveal';
 import { GameScene, GameState, Trial, TrialMode, TRIALS } from '@/types/game';
 import { useGame } from '@/hooks/useGame';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useWallet } from '@/hooks/useWallet';
 import { generateTrialSolution } from '@/utils/trialSolutions';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +42,8 @@ function SceneTransition({ children, sceneKey }: { children: React.ReactNode; sc
 export default function Index() {
   const [gameState, setGameState] = useState<GameState>(initialState);
   const [selectedTrials, setSelectedTrials] = useState<Trial[]>([]);
-  const { submitSolution, isSubmitting } = useGame();
+  const { submitSolution: submitSinglePlayer, isSubmitting } = useGame();
+  const { currentRoom, submitSolution: submitMultiplayer } = useMultiplayer();
   const { isConnected, connect } = useWallet();
   const { toast } = useToast();
 
@@ -104,27 +106,46 @@ export default function Index() {
       });
 
       // STEP 1: Submit to backend (ZK proof) + contract (transaction)
-      const result = await submitSolution(solution, roundId);
+      // Choose submission flow based on game mode
+      let result;
+      if (currentRoom) {
+        console.log('🎮 MULTIPLAYER MODE - Using room:', currentRoom.roomId);
+        console.log('   Player round:', roundId);
+        // Multiplayer: Submit to room endpoint with player's current round
+        result = await submitMultiplayer(solution, roundId);
+      } else {
+        console.log('👤 SINGLE-PLAYER MODE');
+        // Single-player: Submit to contract
+        result = await submitSinglePlayer(solution);
+      }
 
       if (result.success) {
         console.log('✅ Trial submission successful!');
         console.log('📋 TX Hash:', result.txHash);
-        console.log('📊 Progress:', result.progress, '/ 7');
+        
+        const progressMsg = currentRoom 
+          ? `Trial ${gameState.trialsCompleted + 1}/${gameState.totalTrials} verified!`
+          : `Progress: ${result.progress}/7 trials completed`;
         
         toast({
           title: "Trial Verified! ✅",
-          description: `Progress: ${result.progress}/7 trials completed`,
+          description: progressMsg,
         });
 
-        // STEP 2: Update UI state
+        // STEP 2: Update UI state - ALWAYS advance to next trial
+        // Each player progresses independently!
         setGameState(prev => {
           const nextCompleted = prev.trialsCompleted + 1;
           const nextTrial = selectedTrials[nextCompleted];
 
+          console.log(`📈 Player progress: ${nextCompleted}/${prev.totalTrials} trials completed`);
+
           if (nextCompleted >= prev.totalTrials || !nextTrial) {
+            console.log('🏁 All trials completed! Moving to proof scene');
             return { ...prev, scene: 'proof', trialsCompleted: nextCompleted };
           }
 
+          console.log(`➡️  Advancing to next trial: ${nextTrial.name}`);
           return {
             ...prev,
             trialsCompleted: nextCompleted,
@@ -149,7 +170,7 @@ export default function Index() {
         variant: "destructive",
       });
     }
-  }, [gameState, selectedTrials, isConnected, connect, submitSolution, toast]);
+  }, [gameState, selectedTrials, isConnected, connect, submitSinglePlayer, submitMultiplayer, currentRoom, toast]);
 
   const handleProofComplete = useCallback(() => {
     goTo('throneClaim');

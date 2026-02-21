@@ -200,7 +200,7 @@ class RoomService {
    * Proof is already verified by route - just update score!
    * Returns success but DOES NOT reveal score (ZK privacy!)
    */
-  async submitProofForRound(roomId, playerWallet, solution, solutionHash) {
+  async submitProofForRound(roomId, playerWallet, roundId, solution, solutionHash) {
     const room = rooms.get(roomId);
     if (!room) {
       throw new Error("Room not found");
@@ -216,31 +216,36 @@ class RoomService {
     }
 
     // Check if already submitted for this round
-    if (player.completedRounds.includes(room.currentRound)) {
+    if (player.completedRounds.includes(roundId)) {
       return { success: false, message: "Already submitted for this round" };
     }
 
     // Proof already verified in route - just update score!
     player.currentScore += 1;
-    player.completedRounds.push(room.currentRound);
+    player.completedRounds.push(roundId);
     player.lastSolutionHash = solutionHash; // Store for reference
 
     console.log(
-      `✅ ${playerWallet} submitted valid proof for round ${room.currentRound}`
+      `✅ ${playerWallet} submitted valid proof for round ${roundId} (Score: ${player.currentScore}/${room.totalRounds})`
     );
 
-    // Check if all players submitted
-    const allSubmitted = room.players.every((p) =>
-      p.completedRounds.includes(room.currentRound)
+    // Check if THIS PLAYER finished all rounds
+    const playerFinished = player.completedRounds.length >= room.totalRounds;
+    
+    // Check if ALL players finished all rounds
+    const allPlayersFinished = room.players.every(
+      (p) => p.completedRounds.length >= room.totalRounds
     );
 
-    if (allSubmitted) {
-      this._advanceRound(roomId);
+    if (allPlayersFinished) {
+      console.log("🏁 All players finished all rounds!");
+      this._finishGame(roomId);
     }
 
     return {
       success: true,
-      roundComplete: allSubmitted,
+      playerFinished,
+      allPlayersFinished,
       // DO NOT send: currentScore
     };
   }

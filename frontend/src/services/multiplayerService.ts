@@ -154,18 +154,21 @@ class MultiplayerService {
   }
 
   /**
-   * Submit proof for current round
+   * Submit proof for player's current round
    * Backend tracks scores internally (hidden for ZK privacy)
    * Returns attestation for on-chain submission!
+   * Each player can be on different rounds - they don't wait for each other!
    */
   async submitRoundProof(
     roomId: string,
     playerWallet: string,
-    solution: string
+    solution: string,
+    roundId: number  // Player's current round number
   ): Promise<{
     success: boolean;
     message: string;
-    roundComplete: boolean;
+    playerFinished: boolean;  // This player finished all rounds
+    allPlayersFinished: boolean;  // All players finished all rounds
     attestation: {
       signature: string;
       solutionHash: string;
@@ -180,7 +183,7 @@ class MultiplayerService {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ playerWallet, solution }),
+          body: JSON.stringify({ playerWallet, solution, roundId }),
         }
       );
 

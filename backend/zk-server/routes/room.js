@@ -129,29 +129,26 @@ router.post("/:roomId/start", (req, res) => {
 router.post("/:roomId/submit-proof", async (req, res) => {
   try {
     const { roomId } = req.params;
-    const { playerWallet, solution } = req.body;
+    const { playerWallet, solution, roundId } = req.body;
 
-    if (!playerWallet || !solution) {
-      return res.status(400).json({ error: "Missing playerWallet or solution" });
+    if (!playerWallet || !solution || !roundId) {
+      return res.status(400).json({ error: "Missing playerWallet, solution, or roundId" });
     }
 
-    console.log(`\n📝 Room ${roomId}: ${playerWallet} submitting solution`);
+    console.log(`\n📝 Room ${roomId}: ${playerWallet} submitting solution for round ${roundId}`);
 
-    // Get room state to know current round
-    const roomState = roomService.getRoomState(roomId);
-    const currentRound = roomState.currentRound;
-    
-    console.log(`🎯 Current round: ${currentRound}`);
+    // Players can be on different rounds - independent progression!
+    console.log(`🎯 Player's current round: ${roundId}`);
 
     // STEP 1: Validate solution is CORRECT for current round
-    console.log(`🔍 Validating solution for round ${currentRound}...`);
-    const isCorrectAnswer = validateTrialSolution(currentRound, solution);
+    console.log(`🔍 Validating solution for round ${roundId}...`);
+    const isCorrectAnswer = validateTrialSolution(roundId, solution);
     
     if (!isCorrectAnswer) {
       console.log("❌ WRONG ANSWER! Rejecting submission.\n");
       return res.status(400).json({
         success: false,
-        error: `Incorrect solution for round ${currentRound}`,
+        error: `Incorrect solution for round ${roundId}`,
       });
     }
     
@@ -163,7 +160,7 @@ router.post("/:roomId/submit-proof", async (req, res) => {
 
     // STEP 3: Generate ZK proof with bb.js (only for CORRECT answers!)
     console.log("🔧 Generating ZK proof...");
-    const proofData = await generateProof(solution, solutionHash, playerWallet, currentRound);
+    const proofData = await generateProof(solution, solutionHash, playerWallet, roundId);
 
     // STEP 4: Verify proof locally with bb.js
     console.log("🔍 Verifying proof...");
@@ -183,13 +180,14 @@ router.post("/:roomId/submit-proof", async (req, res) => {
     const result = await roomService.submitProofForRound(
       roomId,
       playerWallet,
+      roundId,  // Pass the player's round
       solution,
       solutionHash
     );
 
     // STEP 6: Get nonce and sign attestation (for on-chain submission)
     const nonce = getNextNonce(playerWallet);
-    const signature = signAttestation(currentRound, playerWallet, solutionHash, nonce);
+    const signature = signAttestation(roundId, playerWallet, solutionHash, nonce);
 
     res.json({
       success: true,
@@ -198,7 +196,7 @@ router.post("/:roomId/submit-proof", async (req, res) => {
         signature,
         solutionHash,
         nonce,
-        roundId: currentRound,
+        roundId: roundId,  // Return the player's round
         player: playerWallet,
       },
     });

@@ -34,11 +34,12 @@ export default function WaitingLobby({
   
   // Auto-start game when countdown finishes
   useEffect(() => {
-    if (countdown === 0 && !isStarting) {
+    if (countdown === 0) {
       console.log('⏰ Countdown finished, starting game!');
+      console.log('🎯 WaitingLobby triggering onGameStart for:', { isHost, roomId });
       onGameStart();
     }
-  }, [countdown, onGameStart, isStarting]);
+  }, [countdown, onGameStart, isHost, roomId]);
   
   const handleCopyCode = () => {
     navigator.clipboard.writeText(joinCode);
