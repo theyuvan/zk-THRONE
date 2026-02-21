@@ -176,6 +176,7 @@ export function useMultiplayer() {
     const stopPolling = multiplayerService.startPolling(
       currentRoom.roomId,
       (newState) => {
+        console.log('📡 Room state polled:', { state: newState.state, countdownEndsAt: newState.countdownEndsAt });
         setCurrentRoom(newState);
 
         // Handle game start countdown
@@ -184,6 +185,7 @@ export function useMultiplayer() {
             0,
             Math.ceil((newState.countdownEndsAt - Date.now()) / 1000)
           );
+          console.log(`⏱️  Countdown: ${remaining} seconds remaining`);
           setCountdown(remaining);
 
           if (remaining === 0) {
@@ -191,9 +193,10 @@ export function useMultiplayer() {
           }
         }
 
-        // Clear countdown when game starts
+        // Trigger game start when countdown finishes
         if (newState.state === "IN_PROGRESS") {
-          setCountdown(null);
+          console.log("🎮 Game state is IN_PROGRESS, triggering start!");
+          setCountdown(0);
         }
       },
       2000 // Poll every 2 seconds
@@ -213,9 +216,9 @@ export function useMultiplayer() {
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
-        if (prev === null || prev <= 1) {
+        if (prev === null || prev <= 0) {
           clearInterval(timer);
-          return null;
+          return prev; // Keep at 0 to trigger game start
         }
         return prev - 1;
       });

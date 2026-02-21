@@ -164,8 +164,9 @@ class RoomService {
       throw new Error("Game already started");
     }
 
-    if (room.players.length < 2) {
-      throw new Error("Need at least 2 players to start");
+    // Allow solo testing (normally would require 2 players)
+    if (room.players.length < 1) {
+      throw new Error("Need at least 1 player to start");
     }
 
     room.state = "COUNTDOWN";

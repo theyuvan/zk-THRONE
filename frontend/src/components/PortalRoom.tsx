@@ -69,11 +69,15 @@ export default function PortalRoom({ onSelectMode, onBack }: PortalRoomProps) {
 
   const handleGameStart = () => {
     console.log('🚀 Starting game from waiting lobby...');
+    console.log('📊 State:', { pendingMode, waitingRoom, trialsCount: TRIALS.length });
     if (pendingMode && waitingRoom) {
       // Start game with default trials for now
       const selected = TRIALS.slice(0, pendingMode);
+      console.log('✅ Starting game with trials:', selected);
       onSelectMode(pendingMode, selected);
       setWaitingRoom(null);
+    } else {
+      console.error('❌ Cannot start game - missing pendingMode or waitingRoom');
     }
   };
 

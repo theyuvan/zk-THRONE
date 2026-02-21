@@ -34,11 +34,11 @@ export default function WaitingLobby({
   
   // Auto-start game when countdown finishes
   useEffect(() => {
-    if (countdown === 0) {
+    if (countdown === 0 && !isStarting) {
       console.log('⏰ Countdown finished, starting game!');
       onGameStart();
     }
-  }, [countdown, onGameStart]);
+  }, [countdown, onGameStart, isStarting]);
   
   const handleCopyCode = () => {
     navigator.clipboard.writeText(joinCode);
@@ -52,9 +52,10 @@ export default function WaitingLobby({
       setIsStarting(true);
       await onStartGame();
       // Countdown will be handled by multiplayer hook polling
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start game:', error);
-      alert('Failed to start game. Please try again.');
+      const errorMessage = error?.message || 'Failed to start game. Please try again.';
+      alert(errorMessage);
       setIsStarting(false);
     }
   };
