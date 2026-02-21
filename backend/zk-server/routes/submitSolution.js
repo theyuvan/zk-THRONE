@@ -85,6 +85,7 @@ router.post("/", async (req, res) => {
 
     // STEP 6: Sign attestation (backend approves CORRECT solution)
     console.log("✍️  Signing attestation...");
+    // Use actual trial roundId for unique proof per trial
     const signature = signAttestation(roundId, player, solutionHash, nonce);
 
     // STEP 7: Return attestation
@@ -92,7 +93,7 @@ router.post("/", async (req, res) => {
       signature,
       solutionHash,
       nonce,
-      roundId,
+      roundId,  // Trial number (1, 2, 3...)
       player,
     };
 

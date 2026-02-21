@@ -187,6 +187,7 @@ router.post("/:roomId/submit-proof", async (req, res) => {
 
     // STEP 6: Get nonce and sign attestation (for on-chain submission)
     const nonce = getNextNonce(playerWallet);
+    // Use actual trial roundId for unique proof per trial
     const signature = signAttestation(roundId, playerWallet, solutionHash, nonce);
 
     res.json({
@@ -196,7 +197,7 @@ router.post("/:roomId/submit-proof", async (req, res) => {
         signature,
         solutionHash,
         nonce,
-        roundId: roundId,  // Return the player's round
+        roundId: roundId,  // Trial number (1, 2, 3...)
         player: playerWallet,
       },
     });
