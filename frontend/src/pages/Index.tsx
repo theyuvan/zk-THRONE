@@ -7,7 +7,7 @@ import ProofScene from '@/components/ProofScene';
 import ThroneClaim from '@/components/ThroneClaim';
 import KingReveal from '@/components/KingReveal';
 import { FinalLeaderboard } from '@/components/FinalLeaderboard';
-import { GameScene, GameState, Trial, TrialMode, TRIALS } from '@/types/game';
+import { GameScene, GameState, Trial, TrialMode, TRIALS, MultiplayerInfo } from '@/types/game';
 import { useGame } from '@/hooks/useGame';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useWallet } from '@/hooks/useWallet';
@@ -73,19 +73,65 @@ export default function Index() {
   const [gameState, setGameState] = useState<GameState>(savedGameState);
   const [selectedTrials, setSelectedTrials] = useState<Trial[]>(savedSelectedTrials);
   const { submitSolution: submitSinglePlayer, isSubmitting } = useGame();
-  const { currentRoom, submitSolution: submitMultiplayer } = useMultiplayer();
-  const { isConnected, connect } = useWallet();
+  const { submitSolution: submitMultiplayer, getFinalResults, getRoomState } = useMultiplayer();
+  const { isConnected, connect, publicKey } = useWallet();
   const { toast } = useToast();
+
+  // Poll for game state during multiplayer trials to detect when game ends
+  useEffect(() => {
+    if (!gameState.multiplayer || gameState.scene !== 'trial') return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const roomState = await getRoomState(gameState.multiplayer!.roomId);
+        
+        // Check if game finished
+        if (roomState.state === 'FINISHED') {
+          console.log('🏁 Game finished detected via polling!');
+          clearInterval(pollInterval);
+          
+          // Fetch final results
+          const finalResults = await getFinalResults(gameState.multiplayer!.roomId);
+          const isWinner = finalResults.winner.wallet === publicKey;
+          
+          console.log(`🎯 Final results: Winner is ${finalResults.winner.wallet}`);
+          console.log(`👤 Current player: ${publicKey}`);
+          console.log(`🏆 Is winner: ${isWinner}`);
+          
+          if (isWinner) {
+            toast({
+              title: "🎉 VICTORY!",
+              description: "You completed all trials first!",
+            });
+          } else {
+            toast({
+              title: "💀 DEFEATED",
+              description: `${finalResults.winner.displayName} completed the trials first!`,
+              variant: "destructive",
+            });
+          }
+          
+          // Go to leaderboard
+          clearSavedState();
+          setGameState(prev => ({ ...prev, scene: 'leaderboard' as GameScene }));
+        }
+      } catch (error) {
+        console.error('❌ Failed to poll room state:', error);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [gameState.multiplayer, gameState.scene, publicKey, getRoomState, getFinalResults, toast]);
 
   // Save state to localStorage whenever it changes (single-player only)
   useEffect(() => {
-    if (!currentRoom && gameState.scene !== 'throneHall') {
+    if (!gameState.multiplayer && gameState.scene !== 'throneHall') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
       if (selectedTrials.length > 0) {
         localStorage.setItem(TRIALS_KEY, JSON.stringify(selectedTrials));
       }
     }
-  }, [gameState, selectedTrials, currentRoom]);
+  }, [gameState, selectedTrials]);
 
   const goTo = useCallback((scene: GameScene, extra?: Partial<GameState>) => {
     setGameState(prev => ({ ...prev, scene, ...extra }));
@@ -99,7 +145,8 @@ export default function Index() {
     goTo('portalRoom');
   }, [goTo, gameState.scene, gameState.trialsCompleted]);
 
-  const handleSelectMode = useCallback((mode: TrialMode, trials: Trial[]) => {
+  const handleSelectMode = useCallback((mode: TrialMode, trials: Trial[], multiplayerInfo?: MultiplayerInfo) => {
+    console.log('🎮 handleSelectMode called with:', { mode, trialsCount: trials.length, multiplayerInfo });
     setSelectedTrials(trials);
     const firstTrial = trials[0];
     setGameState(prev => ({
@@ -110,6 +157,7 @@ export default function Index() {
       trialsCompleted: 0,
       currentTrial: firstTrial,
       activatedPortals: [],
+      multiplayer: multiplayerInfo, // Store multiplayer info
     }));
   }, []);
 
@@ -152,11 +200,11 @@ export default function Index() {
       // STEP 1: Submit to backend (ZK proof) + contract (transaction)
       // Choose submission flow based on game mode
       let result;
-      if (currentRoom) {
-        console.log('🎮 MULTIPLAYER MODE - Using room:', currentRoom.roomId);
+      if (gameState.multiplayer?.roomId) {
+        console.log('🎮 MULTIPLAYER MODE - Using room:', gameState.multiplayer.roomId);
         console.log('   Player round:', roundId);
         // Multiplayer: Submit to room endpoint with player's current round
-        result = await submitMultiplayer(solution, roundId);
+        result = await submitMultiplayer(solution, roundId, gameState.multiplayer.roomId);
       } else {
         console.log('👤 SINGLE-PLAYER MODE');
         // Single-player: Submit to contract
@@ -167,7 +215,41 @@ export default function Index() {
         console.log('✅ Trial submission successful!');
         console.log('📋 TX Hash:', result.txHash);
         
-        const progressMsg = currentRoom 
+        // Check if game finished in multiplayer
+        if (gameState.multiplayer && result.gameFinished) {
+          console.log('🏁 Multiplayer game finished! Fetching final results...');
+          clearSavedState();
+          
+          try {
+            const finalResults = await getFinalResults(gameState.multiplayer.roomId);
+            const isWinner = finalResults.winner.wallet === publicKey;
+            
+            console.log(`🎯 Final results: Winner is ${finalResults.winner.wallet}`);
+            console.log(`👤 Current player: ${publicKey}`);
+            console.log(`🏆 Is winner: ${isWinner}`);
+            
+            if (isWinner) {
+              toast({
+                title: "🎉 VICTORY!",
+                description: "You completed all trials first!",
+              });
+            } else {
+              toast({
+                title: "💀 DEFEATED",
+                description: `${finalResults.winner.displayName} completed the trials first!`,
+                variant: "destructive",
+              });
+            }
+            
+            // Go to leaderboard regardless
+            setGameState(prev => ({ ...prev, scene: 'leaderboard' as GameScene }));
+            return;
+          } catch (error) {
+            console.error('❌ Failed to fetch final results:', error);
+          }
+        }
+        
+        const progressMsg = gameState.multiplayer 
           ? `Trial ${gameState.trialsCompleted + 1}/${gameState.totalTrials} verified!`
           : `Progress: ${result.progress}/7 trials completed`;
         
@@ -190,7 +272,7 @@ export default function Index() {
             
             // In multiplayer: Show leaderboard
             // In single-player: Show proof scene
-            const finalScene = currentRoom ? 'leaderboard' : 'proof';
+            const finalScene = gameState.multiplayer ? 'leaderboard' : 'proof';
             console.log(`   → Going to ${finalScene} scene`);
             
             return { ...prev, scene: finalScene, trialsCompleted: nextCompleted };
@@ -221,7 +303,7 @@ export default function Index() {
         variant: "destructive",
       });
     }
-  }, [gameState, selectedTrials, isConnected, connect, submitSinglePlayer, submitMultiplayer, currentRoom, toast]);
+  }, [gameState, selectedTrials, isConnected, connect, submitSinglePlayer, submitMultiplayer, toast]);
 
   const handleProofComplete = useCallback(() => {
     goTo('throneClaim');
