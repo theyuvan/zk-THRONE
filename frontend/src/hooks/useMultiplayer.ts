@@ -118,7 +118,7 @@ export function useMultiplayer() {
 
       console.log("✅ Backend verified proof! Attestation:", result.attestation);
       console.log("📊 Player finished:", result.playerFinished);
-      console.log("🏁 All players finished:", result.allPlayersFinished);
+      console.log("🏁 Game finished (race mode):", result.gameFinished);
 
       // STEP 2: Submit attestation to contract on-chain
       // Import throneContractService
@@ -134,7 +134,7 @@ export function useMultiplayer() {
       return {
         success: true,
         playerFinished: result.playerFinished,
-        allPlayersFinished: result.allPlayersFinished,
+        gameFinished: result.gameFinished,
         txHash: contractResult.txHash,
       };
     } catch (error: any) {

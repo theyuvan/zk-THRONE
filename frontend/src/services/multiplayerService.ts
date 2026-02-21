@@ -168,7 +168,7 @@ class MultiplayerService {
     success: boolean;
     message: string;
     playerFinished: boolean;  // This player finished all rounds
-    allPlayersFinished: boolean;  // All players finished all rounds
+    gameFinished: boolean;  // Game ended (first player finished - race mode!)
     attestation: {
       signature: string;
       solutionHash: string;

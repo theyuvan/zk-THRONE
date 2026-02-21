@@ -232,20 +232,16 @@ class RoomService {
     // Check if THIS PLAYER finished all rounds
     const playerFinished = player.completedRounds.length >= room.totalRounds;
     
-    // Check if ALL players finished all rounds
-    const allPlayersFinished = room.players.every(
-      (p) => p.completedRounds.length >= room.totalRounds
-    );
-
-    if (allPlayersFinished) {
-      console.log("🏁 All players finished all rounds!");
+    // 🏁 RACE MODE: Game ends when FIRST player finishes all rounds!
+    if (playerFinished) {
+      console.log(`🏆 ${playerWallet.slice(0, 8)}... finished first - GAME OVER!`);
       this._finishGame(roomId);
     }
 
     return {
       success: true,
       playerFinished,
-      allPlayersFinished,
+      gameFinished: playerFinished, // Game ends when first player finishes
       // DO NOT send: currentScore
     };
   }
@@ -277,17 +273,19 @@ class RoomService {
     room.state = "FINISHED";
 
     // Calculate final leaderboard
+    // NOTE: In race mode, players may have different completion counts
+    // Winner = player with highest score (completed most rounds)
     room.hiddenLeaderboard = room.players
       .map((p) => ({
         wallet: p.wallet,
         displayName: p.displayName,
-        score: p.currentScore,
+        score: p.currentScore,  // How many rounds this player completed
         accuracy: (p.currentScore / room.totalRounds) * 100,
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.score - a.score)  // Highest score first
       .map((p, index) => ({ ...p, rank: index + 1 }));
 
-    console.log(`🏁 Game finished for room ${roomId}`);
+    console.log(`🏁 Game finished for room ${roomId} (RACE MODE)`);
     console.log("Final Leaderboard:", room.hiddenLeaderboard);
   }
 
