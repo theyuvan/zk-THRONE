@@ -2,7 +2,17 @@
 // THRONE CONTRACT SERVICE
 // ============================================================================
 
-import * as StellarSdk from "@stellar/stellar-sdk";
+import {
+  SorobanRpc,
+  Contract,
+  TransactionBuilder,
+  Account,
+  Keypair,
+  Address,
+  nativeToScVal,
+  scValToNative,
+  BASE_FEE
+} from "@stellar/stellar-sdk";
 import { walletService } from "./walletService";
 
 const CONFIG = {
@@ -24,12 +34,12 @@ interface Attestation {
 }
 
 class ThroneContractService {
-  private server: StellarSdk.SorobanRpc.Server;
-  private contract: StellarSdk.Contract;
+  private server: SorobanRpc.Server;
+  private contract: Contract;
 
   constructor() {
-    this.server = new StellarSdk.SorobanRpc.Server(CONFIG.rpcUrl);
-    this.contract = new StellarSdk.Contract(CONFIG.contractId);
+    this.server = new SorobanRpc.Server(CONFIG.rpcUrl);
+    this.contract = new Contract(CONFIG.contractId);
   }
 
   /**
@@ -54,7 +64,7 @@ class ThroneContractService {
       const sourceAccount = await this.server.getAccount(publicKey);
 
       // STEP 2: Convert parameters to Soroban types
-      const playerAddress = new StellarSdk.Address(attestation.player);
+      const playerAddress = Address.fromString(attestation.player);
 
       // Convert hex solution hash to BytesN<32>
       const solutionHashBytes = Buffer.from(
@@ -73,10 +83,10 @@ class ThroneContractService {
 
       // STEP 3: Build contract call
       // Convert to fixed-length BytesN types using explicit maxLength
-      const solutionHashScVal = StellarSdk.nativeToScVal(solutionHashBytes, {
+      const solutionHashScVal = nativeToScVal(solutionHashBytes, {
         type: "bytes",
       });
-      const signatureScVal = StellarSdk.nativeToScVal(signatureBytes, {
+      const signatureScVal = nativeToScVal(signatureBytes, {
         type: "bytes",
       });
       
@@ -90,11 +100,11 @@ class ThroneContractService {
         playerAddress.toScVal(),
         solutionHashScVal,
         signatureScVal,
-        StellarSdk.nativeToScVal(attestation.nonce, { type: "u64" })
+        nativeToScVal(attestation.nonce, { type: "u64" })
       );
 
       // STEP 4: Build transaction with higher fee for Soroban
-      let transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      let transaction = new TransactionBuilder(sourceAccount, {
         fee: "10000000", // 1 XLM max fee for Soroban contracts
         networkPassphrase: CONFIG.networkPassphrase,
       })
@@ -107,12 +117,12 @@ class ThroneContractService {
       const simulated = await this.server.simulateTransaction(transaction);
 
       console.log("📊 Simulation result:", {
-        status: StellarSdk.SorobanRpc.Api.isSimulationSuccess(simulated) ? "SUCCESS" : "ERROR",
+        status: SorobanRpc.Api.isSimulationSuccess(simulated) ? "SUCCESS" : "ERROR",
         cost: simulated.cost,
         restorePreamble: simulated.restorePreamble,
       });
 
-      if (StellarSdk.SorobanRpc.Api.isSimulationError(simulated)) {
+      if (SorobanRpc.Api.isSimulationError(simulated)) {
         console.error("❌ Simulation error:", simulated);
         throw new Error(`Simulation failed: ${simulated.error}`);
       }
@@ -122,7 +132,7 @@ class ThroneContractService {
       }
 
       // STEP 6: Prepare transaction with auth
-      transaction = StellarSdk.SorobanRpc.assembleTransaction(
+      transaction = SorobanRpc.assembleTransaction(
         transaction,
         simulated
       ).build();
@@ -133,7 +143,7 @@ class ThroneContractService {
         transaction.toXDR()
       );
 
-      const signedTx = StellarSdk.TransactionBuilder.fromXDR(
+      const signedTx = TransactionBuilder.fromXDR(
         signedXdr,
         CONFIG.networkPassphrase
       );
@@ -158,14 +168,14 @@ class ThroneContractService {
           const txResponse = await this.server.getTransaction(txHash);
           
           // Check if transaction is successful
-          if (txResponse.status === StellarSdk.SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+          if (txResponse.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
             console.log("✅ Proof submitted successfully!");
             console.log("🔗 Transaction hash:", txHash);
             return { success: true, txHash };
           }
           
           // Check if transaction failed
-          if (txResponse.status === StellarSdk.SorobanRpc.Api.GetTransactionStatus.FAILED) {
+          if (txResponse.status === SorobanRpc.Api.GetTransactionStatus.FAILED) {
             console.error("❌ Transaction failed:", txResponse);
             throw new Error(`Transaction failed`);
           }
@@ -223,7 +233,7 @@ class ThroneContractService {
    */
   async getProgress(playerAddress: string): Promise<number> {
     try {
-      const playerAddr = new StellarSdk.Address(playerAddress);
+      const playerAddr = Address.fromString(playerAddress);
 
       const operation = this.contract.call(
         "get_progress",
@@ -232,8 +242,8 @@ class ThroneContractService {
 
       const account = await this.server.getAccount(playerAddress);
 
-      const transaction = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(account, {
+        fee: BASE_FEE,
         networkPassphrase: CONFIG.networkPassphrase,
       })
         .addOperation(operation)
@@ -242,10 +252,10 @@ class ThroneContractService {
 
       const simulated = await this.server.simulateTransaction(transaction);
 
-      if (StellarSdk.SorobanRpc.Api.isSimulationSuccess(simulated)) {
+      if (SorobanRpc.Api.isSimulationSuccess(simulated)) {
         const result = simulated.result?.retval;
         if (result) {
-          return StellarSdk.scValToNative(result) as number;
+          return scValToNative(result) as number;
         }
       }
 
@@ -264,14 +274,14 @@ class ThroneContractService {
       const operation = this.contract.call("get_king");
 
       // Use a temporary account for read-only call
-      const tempKeypair = StellarSdk.Keypair.random();
-      const account = new StellarSdk.Account(
+      const tempKeypair = Keypair.random();
+      const account = new Account(
         tempKeypair.publicKey(),
         "0"
       );
 
-      const transaction = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(account, {
+        fee: BASE_FEE,
         networkPassphrase: CONFIG.networkPassphrase,
       })
         .addOperation(operation)
@@ -280,7 +290,7 @@ class ThroneContractService {
 
       const simulated = await this.server.simulateTransaction(transaction);
 
-      if (StellarSdk.SorobanRpc.Api.isSimulationSuccess(simulated)) {
+      if (SorobanRpc.Api.isSimulationSuccess(simulated)) {
         const result = simulated.result?.retval;
         if (!result) {
           return null;
@@ -312,11 +322,11 @@ class ThroneContractService {
     try {
       const operation = this.contract.call("get_round_id");
 
-      const tempKeypair = StellarSdk.Keypair.random();
-      const account = new StellarSdk.Account(tempKeypair.publicKey(), "0");
+      const tempKeypair = Keypair.random();
+      const account = new Account(tempKeypair.publicKey(), "0");
 
-      const transaction = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE,
+      const transaction = new TransactionBuilder(account, {
+        fee: BASE_FEE,
         networkPassphrase: CONFIG.networkPassphrase,
       })
         .addOperation(operation)
@@ -325,10 +335,10 @@ class ThroneContractService {
 
       const simulated = await this.server.simulateTransaction(transaction);
 
-      if (StellarSdk.SorobanRpc.Api.isSimulationSuccess(simulated)) {
+      if (SorobanRpc.Api.isSimulationSuccess(simulated)) {
         const result = simulated.result?.retval;
         if (result) {
-          return StellarSdk.scValToNative(result) as number;
+          return scValToNative(result) as number;
         }
       }
 
