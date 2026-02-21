@@ -8,8 +8,6 @@ interface MemoryOfCrownTrialProps {
 
 const WORD_SETS = [
   ['THRONE', 'CROWN', 'SCEPTER', 'KINGDOM', 'ROYAL', 'SOVEREIGN', 'DECREE', 'MAJESTY', 'HERALD', 'EMPIRE'],
-  ['CIPHER', 'PROOF', 'ZERO', 'KNOWLEDGE', 'VERIFY', 'LOGIC', 'TRUTH', 'WISDOM', 'SECRET', 'CODE'],
-  ['SHADOW', 'LIGHT', 'POWER', 'JUSTICE', 'HONOR', 'VALOR', 'QUEST', 'TRIAL', 'LEGEND', 'FATE'],
 ];
 
 export default function MemoryOfCrownTrial({ onComplete }: MemoryOfCrownTrialProps) {
