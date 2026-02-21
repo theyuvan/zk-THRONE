@@ -59,7 +59,7 @@ export function useMultiplayer() {
       setIsInRoom(true);
       setIsHost(false);
 
-      return { success: true };
+      return { success: true, roomState: result.roomState };
     } catch (error: any) {
       console.error("❌ Failed to join room:", error);
       throw error;
@@ -99,8 +99,9 @@ export function useMultiplayer() {
    * 
    * Players progress independently - no waiting!
    */
-  const submitSolution = useCallback(async (solution: string, roundId: number) => {
-    if (!currentRoom) throw new Error("Not in a room");
+  const submitSolution = useCallback(async (solution: string, roundId: number, roomId?: string) => {
+    const targetRoomId = roomId || currentRoom?.roomId;
+    if (!targetRoomId) throw new Error("Not in a room - roomId required");
 
     try {
       const wallet = walletService.getPublicKey();
@@ -110,7 +111,7 @@ export function useMultiplayer() {
       
       // STEP 1: Submit to backend - generates ZK proof & verifies
       const result = await multiplayerService.submitRoundProof(
-        currentRoom.roomId,
+        targetRoomId,
         wallet,
         solution,
         roundId  // Send player's current round
@@ -127,9 +128,12 @@ export function useMultiplayer() {
       console.log("🔗 Submitting to contract...");
       const contractResult = await throneContractService.submitProof(result.attestation);
 
-      if (contractResult.success) {
-        console.log("✅ Proof submitted on-chain! TxHash:", contractResult.txHash);
+      if (!contractResult.success) {
+        console.error("❌ Contract submission failed");
+        throw new Error(contractResult.error || "Contract submission failed");
       }
+
+      console.log("✅ Proof submitted on-chain! TxHash:", contractResult.txHash);
 
       return {
         success: true,
@@ -157,12 +161,13 @@ export function useMultiplayer() {
    * Get final results (only when game finished)
    * This reveals the leaderboard with all scores!
    */
-  const getFinalResults = useCallback(async () => {
-    if (!currentRoom) throw new Error("Not in a room");
+  const getFinalResults = useCallback(async (roomId?: string) => {
+    const targetRoomId = roomId || currentRoom?.roomId;
+    if (!targetRoomId) throw new Error("Not in a room - roomId required");
 
     try {
       console.log("🏆 Fetching final results...");
-      const results = await multiplayerService.getFinalResults(currentRoom.roomId);
+      const results = await multiplayerService.getFinalResults(targetRoomId);
       console.log("✅ Leaderboard revealed:", results);
       return results;
     } catch (error: any) {
@@ -247,5 +252,6 @@ export function useMultiplayer() {
     submitSolution,
     leaveRoom,
     getFinalResults, // Get leaderboard when game ends
+    getRoomState: multiplayerService.getRoomState.bind(multiplayerService), // Expose for polling
   };
 }
