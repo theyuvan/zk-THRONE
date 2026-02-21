@@ -21,15 +21,15 @@ export default function RoomLobby({ isOpen, onClose, onJoinRoom, mode }: RoomLob
   const [loading, setLoading] = useState(true);
 
   const modeColors = {
-    3: '#00F0FF',
-    5: '#FFD700',
-    7: '#FF2E63',
+    1: '#00F0FF',
+    3: '#FFD700',
+    5: '#FF2E63',
   };
 
   const modeIcons = {
-    3: Shield,
-    5: Swords,
-    7: Crown,
+    1: Shield,
+    3: Swords,
+    5: Crown,
   };
 
   const color = modeColors[mode];
