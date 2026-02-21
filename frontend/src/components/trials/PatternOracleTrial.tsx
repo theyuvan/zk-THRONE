@@ -25,24 +25,6 @@ const PATTERNS = [
     correct: 48,
     rule: 'Multiply by 2',
   },
-  {
-    sequence: [1, 1, 2, 3, 5],
-    options: [8, 7, 9, 6],
-    correct: 8,
-    rule: 'Fibonacci',
-  },
-  {
-    sequence: [10, 20, 19, 29, 28],
-    options: [38, 37, 39, 36],
-    correct: 38,
-    rule: '+10, -1 pattern',
-  },
-  {
-    sequence: [100, 50, 25],
-    options: [12.5, 15, 10, 20],
-    correct: 12.5,
-    rule: 'Divide by 2',
-  },
 ];
 
 export default function PatternOracleTrial({ onComplete }: PatternOracleTrialProps) {
