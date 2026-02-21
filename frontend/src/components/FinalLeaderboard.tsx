@@ -6,10 +6,12 @@ import { motion } from "framer-motion";
 import { Trophy, Star, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useMultiplayer } from "@/hooks/useMultiplayer";
+import { useWallet } from "@/hooks/useWallet";
 import { FinalResults } from "@/services/multiplayerService";
 
 export function FinalLeaderboard() {
   const { currentRoom, getFinalResults } = useMultiplayer();
+  const { publicKey } = useWallet();
   const [results, setResults] = useState<FinalResults | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -70,6 +72,9 @@ export function FinalLeaderboard() {
     );
   }
 
+  // Check if current player is the winner
+  const isWinner = results.winner.wallet === publicKey;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -77,14 +82,17 @@ export function FinalLeaderboard() {
       className="fixed inset-0 flex items-center justify-center bg-black/90 z-50 p-8"
     >
       <div className="max-w-2xl w-full bg-gradient-to-b from-gray-900 to-black border-2 border-cyan-400 rounded-2xl p-8 shadow-2xl">
-        {/* Header */}
+        {/* Header - Show different message for winner */}
         <div className="text-center mb-8">
-          <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+          <Trophy className={`w-16 h-16 ${isWinner ? 'text-yellow-400 animate-bounce' : 'text-gray-400'} mx-auto mb-4`} />
           <h1 className="text-4xl font-bold text-white mb-2">
-            🏆 GAME COMPLETE! 🏆
+            {isWinner ? "🎉 VICTORY! 🎉" : "💀 DEFEATED"}
           </h1>
-          <p className="text-cyan-400 text-lg">
-            {results.totalRounds} Rounds Complete
+          <p className={`${isWinner ? 'text-yellow-400' : 'text-gray-400'} text-lg`}>
+            {isWinner 
+              ? "You conquered the throne!" 
+              : `${results.winner.displayName || results.winner.wallet.slice(0, 8)} won the race!`
+            }
           </p>
         </div>
 
