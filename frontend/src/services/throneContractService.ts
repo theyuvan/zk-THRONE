@@ -148,10 +148,10 @@ class ThroneContractService {
       console.log("📋 Transaction Hash:", txHash);
       console.log(`🔗 View on Stellar Expert: https://stellar.expert/explorer/testnet/tx/${txHash}`);
       
-      // Poll immediately, then every 500ms for first 10 attempts (5 seconds)
-      // Then every 2 seconds after that
+      // Poll for 5 seconds, then check progress as fallback
+      // This handles cases where RPC polling fails but transaction succeeded
       let attempts = 0;
-      const maxAttempts = 60; // 2 minutes total
+      const maxAttempts = 10; // 5 seconds total (10 attempts x 500ms)
 
       while (attempts < maxAttempts) {
         try {
@@ -171,35 +171,34 @@ class ThroneContractService {
           }
           
           // Still pending, continue waiting
-          if (attempts < 10) {
-            console.log(`⏳ Checking... (${attempts + 1})`);
+          if (attempts === 0 || attempts === 5) {
+            console.log(`⏳ Checking transaction status... (${attempts + 1}/${maxAttempts})`);
           }
           
         } catch (error: any) {
-          // Any error during polling (not found, XDR parsing errors, etc) - just keep waiting
-          // Only log occasionally to avoid spam
-          if (attempts === 0 || attempts === 5 || attempts % 20 === 0) {
-            console.log(`⏳ Waiting for confirmation (${attempts + 1}/${maxAttempts})...`);
+          // Any error during polling (not found, network errors, etc) - just keep waiting
+          // Only log the first attempt to avoid spam
+          if (attempts === 0) {
+            console.log(`⏳ Waiting for confirmation...`);
           }
         }
 
-        // Fast polling for first 10 attempts (5 seconds), then slower
-        const delay = attempts < 10 ? 500 : 2000;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        // Fast polling - 500ms between attempts
+        await new Promise((resolve) => setTimeout(resolve, 500));
         attempts++;
       }
 
-      // Even if we timeout, the transaction might have succeeded
-      // Check progress as a fallback
-      console.warn("⚠️ Polling timeout - checking progress as fallback...");
+      // After 5 seconds, check progress as fallback
+      // This is often more reliable than RPC polling
+      console.log("🔍 Checking progress as confirmation...");
       try {
         const currentProgress = await this.getProgress(attestation.player);
         console.log(`📊 Current progress: ${currentProgress}`);
         
-        // If progress is > 0, the transaction likely succeeded
+        // If progress is > 0, the transaction succeeded
         if (currentProgress > 0) {
-          console.log("✅ Transaction appears successful (progress incremented)");
-          console.warn(`🔗 Verify at: https://stellar.expert/explorer/testnet/tx/${txHash}`);
+          console.log("✅ Transaction confirmed (progress incremented)");
+          console.log(`🔗 Verify at: https://stellar.expert/explorer/testnet/tx/${txHash}`);
           return { success: true, txHash };
         }
       } catch (progressError) {

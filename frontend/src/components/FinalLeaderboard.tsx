@@ -16,6 +16,7 @@ export function FinalLeaderboard() {
   useEffect(() => {
     // Auto-fetch results when game finishes
     if (currentRoom?.state === "FINISHED" && !results) {
+      console.log('🏆 Game finished! Fetching leaderboard...');
       fetchResults();
     }
   }, [currentRoom?.state]);
@@ -24,6 +25,7 @@ export function FinalLeaderboard() {
     setLoading(true);
     try {
       const data = await getFinalResults();
+      console.log('📊 Leaderboard loaded:', data);
       setResults(data);
     } catch (error) {
       console.error("Failed to fetch results:", error);
@@ -32,14 +34,40 @@ export function FinalLeaderboard() {
     }
   };
 
-  if (!results) {
-    return loading ? (
-      <div className="text-center py-12">
-        <p className="text-xl text-cyan-400 animate-pulse">
-          🏆 Calculating Final Scores...
-        </p>
+  // Show loading state while fetching
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
+        <div className="text-center">
+          <p className="text-2xl text-cyan-400 animate-pulse mb-4">
+            🏆 Calculating Final Scores...
+          </p>
+        </div>
       </div>
-    ) : null;
+    );
+  }
+
+  // Show waiting message if results not ready yet (other players still playing)
+  if (!results) {
+    const isWaiting = currentRoom?.state !== "FINISHED";
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/90 z-50">
+        <div className="text-center px-8">
+          {isWaiting ? (
+            <>
+              <p className="text-3xl text-yellow-400 mb-4">✨ You finished all trials! ✨</p>
+              <p className="text-xl text-cyan-400 animate-pulse">
+                ⏳ Waiting for other players to complete...
+              </p>
+            </>
+          ) : (
+            <p className="text-xl text-cyan-400 animate-pulse">
+              🏆 Loading results...
+            </p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -3,6 +3,7 @@ export type GameScene =
   | 'portalRoom'
   | 'trial'
   | 'proof'
+  | 'leaderboard'
   | 'throneClaim'
   | 'kingReveal';
 

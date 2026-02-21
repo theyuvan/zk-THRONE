@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ThroneHall from '@/components/ThroneHall';
 import PortalRoom from '@/components/PortalRoom';
@@ -6,12 +6,16 @@ import TrialScene from '@/components/TrialScene';
 import ProofScene from '@/components/ProofScene';
 import ThroneClaim from '@/components/ThroneClaim';
 import KingReveal from '@/components/KingReveal';
+import { FinalLeaderboard } from '@/components/FinalLeaderboard';
 import { GameScene, GameState, Trial, TrialMode, TRIALS } from '@/types/game';
 import { useGame } from '@/hooks/useGame';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useWallet } from '@/hooks/useWallet';
 import { generateTrialSolution } from '@/utils/trialSolutions';
 import { useToast } from '@/hooks/use-toast';
+
+const STORAGE_KEY = 'throne-game-state';
+const TRIALS_KEY = 'throne-selected-trials';
 
 const initialState: GameState = {
   scene: 'throneHall',
@@ -21,6 +25,31 @@ const initialState: GameState = {
   currentTrial: null,
   activatedPortals: [],
 };
+
+// Load saved state from localStorage
+function loadSavedState(): { gameState: GameState; selectedTrials: Trial[] } {
+  try {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    const savedTrials = localStorage.getItem(TRIALS_KEY);
+    
+    if (savedState && savedTrials) {
+      const gameState = JSON.parse(savedState) as GameState;
+      const selectedTrials = JSON.parse(savedTrials) as Trial[];
+      console.log('📂 Restored saved progress:', gameState.trialsCompleted, '/', gameState.totalTrials);
+      return { gameState, selectedTrials };
+    }
+  } catch (error) {
+    console.warn('Failed to load saved state:', error);
+  }
+  return { gameState: initialState, selectedTrials: [] };
+}
+
+// Clear saved state
+function clearSavedState() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(TRIALS_KEY);
+  console.log('🗑️  Cleared saved progress');
+}
 
 function SceneTransition({ children, sceneKey }: { children: React.ReactNode; sceneKey: string }) {
   return (
@@ -40,20 +69,35 @@ function SceneTransition({ children, sceneKey }: { children: React.ReactNode; sc
 }
 
 export default function Index() {
-  const [gameState, setGameState] = useState<GameState>(initialState);
-  const [selectedTrials, setSelectedTrials] = useState<Trial[]>([]);
+  const { gameState: savedGameState, selectedTrials: savedSelectedTrials } = loadSavedState();
+  const [gameState, setGameState] = useState<GameState>(savedGameState);
+  const [selectedTrials, setSelectedTrials] = useState<Trial[]>(savedSelectedTrials);
   const { submitSolution: submitSinglePlayer, isSubmitting } = useGame();
   const { currentRoom, submitSolution: submitMultiplayer } = useMultiplayer();
   const { isConnected, connect } = useWallet();
   const { toast } = useToast();
+
+  // Save state to localStorage whenever it changes (single-player only)
+  useEffect(() => {
+    if (!currentRoom && gameState.scene !== 'throneHall') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+      if (selectedTrials.length > 0) {
+        localStorage.setItem(TRIALS_KEY, JSON.stringify(selectedTrials));
+      }
+    }
+  }, [gameState, selectedTrials, currentRoom]);
 
   const goTo = useCallback((scene: GameScene, extra?: Partial<GameState>) => {
     setGameState(prev => ({ ...prev, scene, ...extra }));
   }, []);
 
   const handleEnterThrone = useCallback(() => {
+    // Clear any saved progress when starting fresh from throne hall
+    if (gameState.scene === 'throneHall' && gameState.trialsCompleted === 0) {
+      clearSavedState();
+    }
     goTo('portalRoom');
-  }, [goTo]);
+  }, [goTo, gameState.scene, gameState.trialsCompleted]);
 
   const handleSelectMode = useCallback((mode: TrialMode, trials: Trial[]) => {
     setSelectedTrials(trials);
@@ -141,8 +185,15 @@ export default function Index() {
           console.log(`📈 Player progress: ${nextCompleted}/${prev.totalTrials} trials completed`);
 
           if (nextCompleted >= prev.totalTrials || !nextTrial) {
-            console.log('🏁 All trials completed! Moving to proof scene');
-            return { ...prev, scene: 'proof', trialsCompleted: nextCompleted };
+            console.log('🏁 All trials completed!');
+            clearSavedState(); // Clear progress when game is complete
+            
+            // In multiplayer: Show leaderboard
+            // In single-player: Show proof scene
+            const finalScene = currentRoom ? 'leaderboard' : 'proof';
+            console.log(`   → Going to ${finalScene} scene`);
+            
+            return { ...prev, scene: finalScene, trialsCompleted: nextCompleted };
           }
 
           console.log(`➡️  Advancing to next trial: ${nextTrial.name}`);
@@ -223,6 +274,13 @@ export default function Index() {
         return (
           <SceneTransition sceneKey="proof">
             <ProofScene onComplete={handleProofComplete} />
+          </SceneTransition>
+        );
+
+      case 'leaderboard':
+        return (
+          <SceneTransition sceneKey="leaderboard">
+            <FinalLeaderboard />
           </SceneTransition>
         );
 
