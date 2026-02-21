@@ -9,7 +9,7 @@ interface TrialSelectionProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (selectedTrials: Trial[]) => void;
-  mode: 3 | 5 | 7;
+  mode: 1 | 3 | 5;
   allTrials: Trial[];
 }
 
@@ -18,16 +18,16 @@ export default function TrialSelection({ isOpen, onClose, onConfirm, mode, allTr
   const [selectedTrialInfo, setSelectedTrialInfo] = useState<Trial | null>(null);
 
   const modeColors = {
-    3: '#00F0FF',
-    5: '#FFD700',
-    7: '#FF2E63',
+    1: '#00F0FF',
+    3: '#FFD700',
+    5: '#FF2E63',
   };
 
   const color = modeColors[mode];
-  const isFixed = mode === 7; // 7-trial mode has all trials fixed
+  const isFixed = mode === 5; // 5-trial mode has all trials fixed
 
   const toggleTrial = (trial: Trial) => {
-    if (isFixed) return; // Can't change for 7-trial mode
+    if (isFixed) return; // Can't change for 5-trial mode
 
     const isSelected = selectedTrials.some(t => t.id === trial.id);
     
@@ -90,8 +90,8 @@ export default function TrialSelection({ isOpen, onClose, onConfirm, mode, allTr
               </h2>
               <p className="text-sm tracking-[0.3em] opacity-70 mb-3" style={{ fontFamily: 'var(--font-body)' }}>
                 {isFixed 
-                  ? 'All 7 trials must be completed in order'
-                  : `Choose ${mode} trials for your arena`
+                  ? 'All 5 trials must be completed in order'
+                  : `Choose ${mode} ${mode === 1 ? 'trial' : 'trials'} for your arena`
                 }
               </p>
               {!isFixed && (

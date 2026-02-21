@@ -6,15 +6,13 @@ export type GameScene =
   | 'throneClaim'
   | 'kingReveal';
 
-export type TrialMode = 3 | 5 | 7;
+export type TrialMode = 1 | 3 | 5;
 
 export type TrialId =
   | 'colorSigil'
-  | 'hiddenSigil'
   | 'logicLabyrinth'
   | 'patternOracle'
   | 'memoryOfCrown'
-  | 'timekeeper'
   | 'finalOath';
 
 export interface Trial {
@@ -58,10 +56,8 @@ export interface GameState {
 
 export const TRIALS: Trial[] = [
   { id: 'colorSigil', name: 'Cipher Grid', portalColor: '#FFD700', colorHex: 'gold', description: 'Decode the chromatic rune sequence' },
-  { id: 'hiddenSigil', name: 'Hidden Sigil', portalColor: '#FF2E63', colorHex: 'crimson', description: 'Reveal what is hidden in the void' },
   { id: 'logicLabyrinth', name: 'Logic Labyrinth', portalColor: '#00F0FF', colorHex: 'neon', description: 'Navigate the path of reason' },
   { id: 'patternOracle', name: 'Pattern Oracle', portalColor: '#8B5CF6', colorHex: 'purple', description: 'Predict the sequence of fate' },
   { id: 'memoryOfCrown', name: 'Memory of the Crown', portalColor: '#FFD700', colorHex: 'gold', description: 'Remember the fragments of kingship' },
-  { id: 'timekeeper', name: 'Trap Detection', portalColor: '#00F0FF', colorHex: 'neon', description: 'Master time itself' },
   { id: 'finalOath', name: 'Thronebreaker Protocol', portalColor: '#FF2E63', colorHex: 'crimson', description: 'Swear fealty to the throne' },
 ];

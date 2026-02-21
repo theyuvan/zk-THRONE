@@ -6,36 +6,36 @@ interface TrialInfoDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onContinue: () => void;
-  mode: 3 | 5 | 7;
+  mode: 1 | 3 | 5;
 }
 
 const modeInfo = {
-  3: {
-    title: '3 TRIALS — INITIATE PATH',
+  1: {
+    title: '1 TRIAL — INITIATE PATH',
     subtitle: 'The Path of Discovery',
     icon: Shield,
     color: '#00F0FF',
     difficulty: 'Beginner',
-    description: 'Begin your journey to sovereignty. Complete three fundamental trials to prove your worth.',
-    trials: ['Color Sigil', 'Hidden Sigil', 'Logic Labyrinth'],
+    description: 'Begin your journey to sovereignty. Complete one fundamental trial to prove your worth.',
+    trials: ['Cipher Grid'],
   },
-  5: {
-    title: '5 TRIALS — CHAMPION PATH',
+  3: {
+    title: '3 TRIALS — CHAMPION PATH',
     subtitle: 'The Path of Mastery',
     icon: Swords,
     color: '#FFD700',
     difficulty: 'Intermediate',
-    description: 'Challenge yourself with five diverse trials. Only true champions reach this level.',
-    trials: ['Color Sigil', 'Hidden Sigil', 'Logic Labyrinth', 'Pattern Oracle', 'Memory of Crown'],
+    description: 'Challenge yourself with three diverse trials. Only true champions reach this level.',
+    trials: ['Cipher Grid', 'Logic Labyrinth', 'Pattern Oracle'],
   },
-  7: {
-    title: "7 TRIALS — KING'S PATH",
+  5: {
+    title: "5 TRIALS — KING'S PATH",
     subtitle: 'The Path of Ultimate Sovereignty',
     icon: Crown,
     color: '#FF2E63',
     difficulty: 'Master',
-    description: 'Face all seven trials and claim the throne. The ultimate test of intelligence, speed, and strategy.',
-    trials: ['Color Sigil', 'Hidden Sigil', 'Logic Labyrinth', 'Pattern Oracle', 'Memory of Crown', 'Timekeeper', 'Final Oath'],
+    description: 'Face all five trials and claim the throne. The ultimate test of intelligence, speed, and strategy.',
+    trials: ['Cipher Grid', 'Logic Labyrinth', 'Pattern Oracle', 'Memory of Crown', 'Thronebreaker Protocol'],
   },
 };
 

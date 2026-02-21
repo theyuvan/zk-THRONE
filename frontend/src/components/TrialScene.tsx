@@ -8,11 +8,9 @@ import * as THREE from 'three';
 
 // New Trial Components
 import CipherGridTrial from '@/components/trials/CipherGridTrial';
-import HiddenSigilTrial from '@/components/trials/HiddenSigilTrial';
 import LogicLabyrinthTrial from '@/components/trials/LogicLabyrinthTrial';
 import PatternOracleTrial from '@/components/trials/PatternOracleTrial';
 import MemoryOfCrownTrial from '@/components/trials/MemoryOfCrownTrial';
-import TrapDetectionTrial from '@/components/trials/TrapDetectionTrial';
 import ThronebreakerProtocolTrial from '@/components/trials/ThronebreakerProtocolTrial';
 
 // Trial-specific 3D objects
@@ -207,7 +205,6 @@ const trialScenes: Record<string, () => JSX.Element> = {
   colorSigil: ColorSigilScene,
   logicLabyrinth: LogicMazeScene,
   patternOracle: PatternOracleScene,
-  timekeeper: ClockScene,
   finalOath: FinalOathScene,
 };
 
@@ -398,16 +395,12 @@ export default function TrialScene({ trial, trialNumber, totalTrials, onComplete
     switch (trial.id) {
       case 'colorSigil':
         return <CipherGridTrial onComplete={handleTrialComplete} />;
-      case 'hiddenSigil':
-        return <HiddenSigilTrial onComplete={handleTrialComplete} />;
       case 'logicLabyrinth':
         return <LogicLabyrinthTrial onComplete={handleTrialComplete} />;
       case 'patternOracle':
         return <PatternOracleTrial onComplete={handleTrialComplete} />;
       case 'memoryOfCrown':
         return <MemoryOfCrownTrial onComplete={handleTrialComplete} />;
-      case 'timekeeper':
-        return <TrapDetectionTrial onComplete={handleTrialComplete} />;
       case 'finalOath':
         return <ThronebreakerProtocolTrial onComplete={handleTrialComplete} />;
       default:
