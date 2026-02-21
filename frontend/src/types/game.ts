@@ -26,6 +26,7 @@ export interface Trial {
 }
 
 export interface MultiplayerInfo {
+  roomId: string;
   isHost: boolean;
   roomCode?: string;
   playerCount?: number;
