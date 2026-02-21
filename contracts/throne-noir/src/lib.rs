@@ -83,12 +83,14 @@ impl Throne {
     /// Submit a verified proof attestation
     /// Backend has already verified the ZK proof off-chain
     /// This function verifies the backend's signature and updates progress
+    /// Each trial has its own roundId (1, 2, 3...) for unique proof verification
     pub fn submit_proof(
         env: Env,
         player: Address,
         solution_hash: BytesN<32>,
         signature: BytesN<64>,
         nonce: u64,
+        trial_round_id: u32,  // Which trial is being submitted (1, 2, 3...)
     ) {
         player.require_auth();
 
@@ -114,27 +116,34 @@ impl Throne {
             panic_with_error!(&env, Error::InvalidNonce);
         }
 
-        // STEP 3: Get backend public key
+        // STEP 3: Get player's current progress
+        let current_progress: u32 = env
+            .storage()
+            .instance()
+            .get(&DataKey::Progress(player.clone()))
+            .unwrap_or(0);
+
+        // STEP 4: Validate trial_round_id matches expected progress
+        // Player with 0 trials complete should submit trial 1, etc.
+        let expected_trial = current_progress + 1;
+        if trial_round_id != expected_trial {
+            panic_with_error!(&env, Error::InvalidNonce); // Reuse InvalidNonce for wrong trial order
+        }
+
+        // STEP 5: Get backend public key
         let backend_pubkey: BytesN<32> = env
             .storage()
             .instance()
             .get(&DataKey::BackendPubKey)
             .expect("Backend public key not set");
 
-        // STEP 4: Get round ID
-        let round_id: u32 = env
-            .storage()
-            .instance()
-            .get(&DataKey::RoundId)
-            .unwrap_or(1);
-
-        // STEP 5: Verify backend signature
-        // Message format: SHA256(roundId + player + solutionHash + nonce)
+        // STEP 6: Verify backend signature using the trial_round_id
+        // Message format: SHA256(trialRoundId + player + solutionHash + nonce)
         Self::verify_signature(
             &env,
             &backend_pubkey,
             &signature,
-            round_id,
+            trial_round_id,
             &player,
             &solution_hash,
             nonce,
@@ -170,15 +179,22 @@ impl Throne {
             env.storage().instance().set(&DataKey::King, &player);
             env.storage().instance().set(&DataKey::IsLocked, &true);
 
+            // Get game round ID for event
+            let game_round_id: u32 = env
+                .storage()
+                .instance()
+                .get(&DataKey::RoundId)
+                .unwrap_or(1);
+
             env.events().publish(
                 (symbol_short!("king"),),
-                (player.clone(), round_id),
+                (player.clone(), game_round_id, trial_round_id),
             );
         } else {
-            // Progress event
+            // Progress event with trial info
             env.events().publish(
                 (symbol_short!("progress"),),
-                (player, count, required),
+                (player, count, required, trial_round_id),
             );
         }
     }
