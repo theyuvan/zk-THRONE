@@ -6,28 +6,83 @@ interface PatternOracleTrialProps {
   onComplete: () => void;
 }
 
-const PATTERNS = [
-  {
-    sequence: [2, 4, 8, 16],
-    options: [32, 24, 18, 20],
-    correct: 32,
-    rule: 'Multiply by 2',
-  },
-  {
-    sequence: [1, 4, 9, 16],
-    options: [25, 20, 24, 21],
-    correct: 25,
-    rule: 'Square numbers',
-  },
-  {
-    sequence: [3, 6, 12, 24],
-    options: [48, 36, 30, 42],
-    correct: 48,
-    rule: 'Multiply by 2',
-  },
+// ============================================================================
+// 10 DIFFERENT PATTERN SETS FOR VARIETY
+// ============================================================================
+const PATTERN_SETS = [
+  // Set 1: Powers of 2
+  [
+    { sequence: [2, 4, 8, 16], options: [32, 24, 18, 20], correct: 32, rule: 'Multiply by 2' },
+    { sequence: [1, 2, 4, 8], options: [16, 12, 10, 14], correct: 16, rule: 'Multiply by 2' },
+    { sequence: [5, 10, 20, 40], options: [80, 60, 50, 70], correct: 80, rule: 'Multiply by 2' },
+  ],
+  // Set 2: Square Numbers
+  [
+    { sequence: [1, 4, 9, 16], options: [25, 20, 24, 21], correct: 25, rule: 'Square numbers' },
+    { sequence: [4, 9, 16, 25], options: [36, 30, 32, 35], correct: 36, rule: 'Square numbers' },
+    { sequence: [1, 9, 25, 49], options: [81, 64, 72, 100], correct: 81, rule: 'Odd square numbers' },
+  ],
+  // Set 3: Add Constant
+  [
+    { sequence: [3, 8, 13, 18], options: [23, 21, 22, 24], correct: 23, rule: 'Add 5' },
+    { sequence: [7, 14, 21, 28], options: [35, 32, 33, 36], correct: 35, rule: 'Add 7' },
+    { sequence: [10, 20, 30, 40], options: [50, 45, 48, 55], correct: 50, rule: 'Add 10' },
+  ],
+  // Set 4: Fibonacci Style
+  [
+    { sequence: [1, 1, 2, 3], options: [5, 4, 6, 7], correct: 5, rule: 'Fibonacci' },
+    { sequence: [2, 3, 5, 8], options: [13, 11, 12, 10], correct: 13, rule: 'Fibonacci' },
+    { sequence: [1, 2, 3, 5], options: [8, 7, 6, 9], correct: 8, rule: 'Fibonacci' },
+  ],
+  // Set 5: Multiply by 3
+  [
+    { sequence: [1, 3, 9, 27], options: [81, 54, 72, 90], correct: 81, rule: 'Multiply by 3' },
+    { sequence: [2, 6, 18, 54], options: [162, 108, 144, 180], correct: 162, rule: 'Multiply by 3' },
+    { sequence: [5, 15, 45, 135], options: [405, 270, 360, 450], correct: 405, rule: 'Multiply by 3' },
+  ],
+  // Set 6: Alternating Pattern
+  [
+    { sequence: [2, 5, 8, 11], options: [14, 13, 15, 12], correct: 14, rule: 'Add 3' },
+    { sequence: [1, 4, 7, 10], options: [13, 12, 14, 11], correct: 13, rule: 'Add 3' },
+    { sequence: [5, 9, 13, 17], options: [21, 20, 22, 19], correct: 21, rule: 'Add 4' },
+  ],
+  // Set 7: Subtract Pattern
+  [
+    { sequence: [100, 90, 80, 70], options: [60, 65, 55, 50], correct: 60, rule: 'Subtract 10' },
+    { sequence: [50, 45, 40, 35], options: [30, 32, 28, 33], correct: 30, rule: 'Subtract 5' },
+    { sequence: [200, 180, 160, 140], options: [120, 130, 110, 125], correct: 120, rule: 'Subtract 20' },
+  ],
+  // Set 8: Prime Numbers
+  [
+    { sequence: [2, 3, 5, 7], options: [11, 9, 10, 8], correct: 11, rule: 'Prime numbers' },
+    { sequence: [3, 5, 7, 11], options: [13, 12, 14, 15], correct: 13, rule: 'Prime numbers' },
+    { sequence: [5, 7, 11, 13], options: [17, 15, 16, 18], correct: 17, rule: 'Prime numbers' },
+  ],
+  // Set 9: Geometric Growth
+  [
+    { sequence: [1, 4, 16, 64], options: [256, 128, 192, 512], correct: 256, rule: 'Multiply by 4' },
+    { sequence: [3, 15, 75, 375], options: [1875, 1125, 1500, 2250], correct: 1875, rule: 'Multiply by 5' },
+    { sequence: [2, 12, 72, 432], options: [2592, 1728, 2160, 3024], correct: 2592, rule: 'Multiply by 6' },
+  ],
+  // Set 10: Mixed Operations
+  [
+    { sequence: [1, 3, 6, 10], options: [15, 13, 14, 12], correct: 15, rule: 'Triangular numbers' },
+    { sequence: [2, 6, 12, 20], options: [30, 28, 24, 26], correct: 30, rule: 'n(n+1)' },
+    { sequence: [3, 7, 15, 31], options: [63, 60, 62, 64], correct: 63, rule: 'Double + 1' },
+  ],
 ];
 
+// Select a random pattern set on component mount
+const getRandomPatternSet = () => {
+  const randomIndex = Math.floor(Math.random() * PATTERN_SETS.length);
+  console.log(`🎲 PatternOracle: Selected pattern set ${randomIndex + 1}/${PATTERN_SETS.length}`);
+  return PATTERN_SETS[randomIndex];
+};
+
 export default function PatternOracleTrial({ onComplete }: PatternOracleTrialProps) {
+  // Select a random pattern set on component mount (only happens once)
+  const [PATTERNS] = useState(() => getRandomPatternSet());
+  
   const [currentPattern, setCurrentPattern] = useState(0);
   const [timeLeft, setTimeLeft] = useState(45);
   const [isLocked, setIsLocked] = useState(false);
