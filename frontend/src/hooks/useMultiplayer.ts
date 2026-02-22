@@ -2,15 +2,19 @@
 // MULTIPLAYER HOOK - Manage Room State and Backend Connection
 // ============================================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { multiplayerService, RoomState } from "@/services/multiplayerService";
 import { walletService } from "@/services/walletService";
+import { throneContractService } from "@/services/throneContractService";
 
 export function useMultiplayer() {
   const [currentRoom, setCurrentRoom] = useState<RoomState | null>(null);
   const [isInRoom, setIsInRoom] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  
+  // Track if we've already called startMultiplayerSession for this game
+  const sessionStartedRef = useRef<string | null>(null);
 
   /**
    * Create a new room (becomes host)
@@ -155,6 +159,7 @@ export function useMultiplayer() {
     setIsInRoom(false);
     setIsHost(false);
     setCountdown(null);
+    sessionStartedRef.current = null; // Reset session tracker
   }, []);
 
   /**
@@ -218,6 +223,66 @@ export function useMultiplayer() {
       stopPolling();
     };
   }, [currentRoom?.roomId]);
+
+  /**
+   * Call contract's start_multiplayer_session when game begins
+   * CRITICAL: This triggers Game Hub's start_game() for hackathon compliance
+   * Only host calls this (contract requires player1.require_auth())
+   */
+  useEffect(() => {
+    if (!currentRoom || !isHost) return;
+    if (currentRoom.state !== "IN_PROGRESS") return;
+    
+    // Prevent duplicate calls for same room
+    if (sessionStartedRef.current === currentRoom.roomId) {
+      console.log("⏭️  Session already started for this room, skipping");
+      return;
+    }
+
+    const initializeSession = async () => {
+      try {
+        console.log("🎮 HOST: Calling contract.start_multiplayer_session()...");
+        
+        // Get player addresses from room
+        if (currentRoom.players.length < 2) {
+          console.error("❌ Need at least 2 players for multiplayer session");
+          return;
+        }
+
+        const player1 = currentRoom.players[0].wallet;
+        const player2 = currentRoom.players[1].wallet;
+        
+        // Generate session ID from room ID (convert to number)
+        const sessionId = parseInt(currentRoom.roomId.slice(0, 8), 16);
+        
+        console.log("📊 Session params:", { sessionId, player1, player2 });
+        
+        // Call contract - this will trigger Game Hub's start_game()
+        const result = await throneContractService.startMultiplayerSession(
+          sessionId,
+          player1,
+          player2
+        );
+
+        if (result.success) {
+          console.log("✅ Multiplayer session started on-chain!");
+          console.log("🏆 Game Hub notified via start_game()");
+          console.log(`🔗 TX: ${result.txHash}`);
+          
+          // Mark as started to prevent duplicate calls
+          sessionStartedRef.current = currentRoom.roomId;
+        } else {
+          console.error("❌ Failed to start session:", result.error);
+        }
+      } catch (error) {
+        console.error("❌ Error starting multiplayer session:", error);
+      }
+    };
+
+    // Add small delay to ensure wallet is ready
+    const timer = setTimeout(initializeSession, 1000);
+    return () => clearTimeout(timer);
+  }, [currentRoom?.state, currentRoom?.roomId, currentRoom?.players, isHost]);
 
   /**
    * Countdown timer effect
