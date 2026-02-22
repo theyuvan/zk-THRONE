@@ -12,35 +12,103 @@ interface Question {
   wrongAnswer: string;
 }
 
-const QUESTIONS: Question[] = [
-  {
-    question: 'What comes before Monday?',
-    correctAnswer: 'Sunday',
-    wrongAnswer: 'Tuesday',
-  },
-  {
-    question: '2 + 2 = ?',
-    correctAnswer: '4',
-    wrongAnswer: '5',
-  },
-  {
-    question: 'The sky is ___',
-    correctAnswer: 'Blue',
-    wrongAnswer: 'Red',
-  },
-  {
-    question: 'Capital of France?',
-    correctAnswer: 'Paris',
-    wrongAnswer: 'London',
-  },
-  {
-    question: 'How many sides in a triangle?',
-    correctAnswer: '3',
-    wrongAnswer: '4',
-  },
+// ============================================================================
+// 10 DIFFERENT QUESTION SETS FOR VARIETY (Paradox: Shoot the WRONG answer!)
+// ============================================================================
+const QUESTION_SETS: Question[][] = [
+  // Set 1: Days & Math
+  [
+    { question: 'What comes before Monday?', correctAnswer: 'Sunday', wrongAnswer: 'Tuesday' },
+    { question: '2 + 2 = ?', correctAnswer: '4', wrongAnswer: '5' },
+    { question: 'The sky is ___', correctAnswer: 'Blue', wrongAnswer: 'Red' },
+    { question: 'Capital of France?', correctAnswer: 'Paris', wrongAnswer: 'London' },
+    { question: 'How many sides in a triangle?', correctAnswer: '3', wrongAnswer: '4' },
+  ],
+  // Set 2: Colors & Animals
+  [
+    { question: 'Grass is what color?', correctAnswer: 'Green', wrongAnswer: 'Purple' },
+    { question: 'A dog has how many legs?', correctAnswer: '4', wrongAnswer: '6' },
+    { question: 'The sun rises in the ___', correctAnswer: 'East', wrongAnswer: 'West' },
+    { question: 'Fire is ___', correctAnswer: 'Hot', wrongAnswer: 'Cold' },
+    { question: 'Birds can ___', correctAnswer: 'Fly', wrongAnswer: 'Swim' },
+  ],
+  // Set 3: Basic Facts
+  [
+    { question: 'Ice is ___', correctAnswer: 'Cold', wrongAnswer: 'Hot' },
+    { question: 'Humans need ___ to breathe', correctAnswer: 'Air', wrongAnswer: 'Water' },
+    { question: 'Night comes after ___', correctAnswer: 'Day', wrongAnswer: 'Morning' },
+    { question: 'A week has ___ days', correctAnswer: '7', wrongAnswer: '5' },
+    { question: 'The ocean is ___', correctAnswer: 'Salty', wrongAnswer: 'Sweet' },
+  ],
+  // Set 4: Numbers & Time
+  [
+    { question: '10 - 5 = ?', correctAnswer: '5', wrongAnswer: '15' },
+    { question: 'A year has ___ months', correctAnswer: '12', wrongAnswer: '10' },
+    { question: 'A circle has ___ corners', correctAnswer: '0', wrongAnswer: '4' },
+    { question: 'The earth is ___', correctAnswer: 'Round', wrongAnswer: 'Flat' },
+    { question: 'Rain comes from ___', correctAnswer: 'Clouds', wrongAnswer: 'Ground' },
+  ],
+  // Set 5: Geography & Nature
+  [
+    { question: 'Mountains are ___', correctAnswer: 'Tall', wrongAnswer: 'Short' },
+    { question: 'Stars appear at ___', correctAnswer: 'Night', wrongAnswer: 'Day' },
+    { question: 'Trees have ___', correctAnswer: 'Leaves', wrongAnswer: 'Scales' },
+    { question: 'The moon orbits the ___', correctAnswer: 'Earth', wrongAnswer: 'Sun' },
+    { question: 'Snow is ___', correctAnswer: 'White', wrongAnswer: 'Black' },
+  ],
+  // Set 6: Body & Senses
+  [
+    { question: 'We see with our ___', correctAnswer: 'Eyes', wrongAnswer: 'Ears' },
+    { question: 'Hearts pump ___', correctAnswer: 'Blood', wrongAnswer: 'Air' },
+    { question: 'Teeth are used to ___', correctAnswer: 'Chew', wrongAnswer: 'See' },
+    { question: 'Lungs help us ___', correctAnswer: 'Breathe', wrongAnswer: 'Walk' },
+    { question: 'Hands have ___ fingers', correctAnswer: '5', wrongAnswer: '7' },
+  ],
+  // Set 7: Opposites
+  [
+    { question: 'Opposite of up is ___', correctAnswer: 'Down', wrongAnswer: 'Left' },
+    { question: 'Opposite of hot is ___', correctAnswer: 'Cold', wrongAnswer: 'Wet' },
+    { question: 'Opposite of day is ___', correctAnswer: 'Night', wrongAnswer: 'Week' },
+    { question: 'Opposite of fast is ___', correctAnswer: 'Slow', wrongAnswer: 'Quick' },
+    { question: 'Opposite of big is ___', correctAnswer: 'Small', wrongAnswer: 'Huge' },
+  ],
+  // Set 8: Science & Space
+  [
+    { question: 'The sun is a ___', correctAnswer: 'Star', wrongAnswer: 'Planet' },
+    { question: 'Water boils at ___ Celsius', correctAnswer: '100', wrongAnswer: '50' },
+    { question: 'Plants need ___ to grow', correctAnswer: 'Sunlight', wrongAnswer: 'Darkness' },
+    { question: 'Gravity pulls things ___', correctAnswer: 'Down', wrongAnswer: 'Up' },
+    { question: 'Diamonds are ___', correctAnswer: 'Hard', wrongAnswer: 'Soft' },
+  ],
+  // Set 9: Food & Drinks
+  [
+    { question: 'Lemons taste ___', correctAnswer: 'Sour', wrongAnswer: 'Sweet' },
+    { question: 'Milk comes from ___', correctAnswer: 'Cows', wrongAnswer: 'Trees' },
+    { question: 'Bread is made from ___', correctAnswer: 'Wheat', wrongAnswer: 'Meat' },
+    { question: 'Honey is made by ___', correctAnswer: 'Bees', wrongAnswer: 'Ants' },
+    { question: 'Coffee is ___', correctAnswer: 'Bitter', wrongAnswer: 'Sweet' },
+  ],
+  // Set 10: Sports & Games
+  [
+    { question: 'Soccer is played with a ___', correctAnswer: 'Ball', wrongAnswer: 'Stick' },
+    { question: 'Chess has ___ squares', correctAnswer: '64', wrongAnswer: '100' },
+    { question: 'Olympics happen every ___ years', correctAnswer: '4', wrongAnswer: '2' },
+    { question: 'A marathon is ___ km', correctAnswer: '42', wrongAnswer: '10' },
+    { question: 'Basketball uses a ___', correctAnswer: 'Hoop', wrongAnswer: 'Goal' },
+  ],
 ];
 
+// Select a random question set on component mount
+const getRandomQuestionSet = () => {
+  const randomIndex = Math.floor(Math.random() * QUESTION_SETS.length);
+  console.log(`🎲 ThronebreakerProtocol: Selected question set ${randomIndex + 1}/${QUESTION_SETS.length}`);
+  return QUESTION_SETS[randomIndex];
+};
+
 export default function ThronebreakerProtocolTrial({ onComplete }: ThronebreakerProtocolTrialProps) {
+  // Select a random question set on component mount (only happens once)
+  const [QUESTIONS] = useState(() => getRandomQuestionSet());
+  
   const [round, setRound] = useState(0);
   const [ammo, setAmmo] = useState(1);
   const [targetPosition, setTargetPosition] = useState<'left' | 'right'>('left');
