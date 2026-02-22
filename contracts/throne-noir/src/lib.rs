@@ -1,9 +1,30 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, panic_with_error, symbol_short, Address,
+    contract, contracterror, contractimpl, contracttype, contractclient, panic_with_error, symbol_short, Address,
     Bytes, BytesN, Env,
 };
+
+// ============================================================================
+// GAME HUB INTEGRATION (Required for Stellar Hackathon)
+// ============================================================================
+
+/// Game Hub client interface - REQUIRED for hackathon submission
+/// Testnet Game Hub: CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG
+#[contractclient(name = "GameHubClient")]
+pub trait GameHub {
+    fn start_game(
+        env: Env,
+        game_id: Address,
+        session_id: u32,
+        player1: Address,
+        player2: Address,
+        player1_points: i128,
+        player2_points: i128,
+    );
+
+    fn end_game(env: Env, session_id: u32, player1_won: bool);
+}
 
 // ============================================================================
 // DATA STRUCTURES
@@ -17,6 +38,11 @@ pub enum DataKey {
     King,
     IsLocked,
     BackendPubKey,
+    GameHub,           // Game Hub contract address
+    SessionId,         // Current multiplayer session ID
+    SessionPlayer1,    // Player 1 in current session
+    SessionPlayer2,    // Player 2 in current session
+    SessionStarted,    // Has start_game been called for current session?
     Progress(Address),
     Nonce(Address),
 }
@@ -55,6 +81,7 @@ impl Throne {
         admin: Address,
         backend_pubkey: BytesN<32>,
         required_trials: u32,
+        game_hub: Address,  // Game Hub contract address (required for hackathon)
     ) {
         admin.require_auth();
 
@@ -62,6 +89,11 @@ impl Throne {
         env.storage()
             .instance()
             .set(&DataKey::BackendPubKey, &backend_pubkey);
+
+        // Store Game Hub address for lifecycle reporting
+        env.storage()
+            .instance()
+            .set(&DataKey::GameHub, &game_hub);
 
         // Initialize round 1
         env.storage().instance().set(&DataKey::RoundId, &1u32);
@@ -72,7 +104,56 @@ impl Throne {
 
         env.events().publish(
             (symbol_short!("init"),),
-            (admin, backend_pubkey, required_trials),
+            (admin, backend_pubkey, required_trials, game_hub),
+        );
+    }
+
+    // ========================================================================
+    // MULTIPLAYER SESSION (Game Hub Integration)
+    // ========================================================================
+
+    /// Start a multiplayer session between two players
+    /// REQUIRED: Calls Game Hub's start_game() for hackathon compliance
+    /// Frontend/backend should call this when a multiplayer room countdown finishes
+    pub fn start_multiplayer_session(
+        env: Env,
+        session_id: u32,
+        player1: Address,
+        player2: Address,
+    ) {
+        // Require auth from at least one player (typically the host)
+        player1.require_auth();
+
+        // Get Game Hub address
+        let game_hub_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::GameHub)
+            .expect("Game Hub not configured");
+
+        // Store session info
+        env.storage().instance().set(&DataKey::SessionId, &session_id);
+        env.storage().instance().set(&DataKey::SessionPlayer1, &player1);
+        env.storage().instance().set(&DataKey::SessionPlayer2, &player2);
+        env.storage().instance().set(&DataKey::SessionStarted, &true);
+
+        // HACKATHON REQUIREMENT: Call Game Hub's start_game()
+        // This reports the game start to the ecosystem
+        let game_hub_client = GameHubClient::new(&env, &game_hub_addr);
+        let game_id = env.current_contract_address();
+        
+        game_hub_client.start_game(
+            &game_id,
+            &session_id,
+            &player1,
+            &player2,
+            &0i128,  // Initial points (both start at 0)
+            &0i128,
+        );
+
+        env.events().publish(
+            (symbol_short!("session"),),
+            (session_id, player1, player2),
         );
     }
 
@@ -186,6 +267,46 @@ impl Throne {
                 .get(&DataKey::RoundId)
                 .unwrap_or(1);
 
+            // HACKATHON REQUIREMENT: Call Game Hub's end_game() when winner determined
+            // Check if this is a multiplayer session
+            let session_started: bool = env
+                .storage()
+                .instance()
+                .get(&DataKey::SessionStarted)
+                .unwrap_or(false);
+
+            if session_started {
+                let session_id: u32 = env
+                    .storage()
+                    .instance()
+                    .get(&DataKey::SessionId)
+                    .unwrap_or(0);
+
+                let player1: Address = env
+                    .storage()
+                    .instance()
+                    .get(&DataKey::SessionPlayer1)
+                    .expect("Session player1 not found");
+
+                // Determine if player1 won (current player is winner)
+                let player1_won = player == player1;
+
+                // Get Game Hub address and report game end
+                let game_hub_addr: Address = env
+                    .storage()
+                    .instance()
+                    .get(&DataKey::GameHub)
+                    .expect("Game Hub not configured");
+
+                let game_hub_client = GameHubClient::new(&env, &game_hub_addr);
+                game_hub_client.end_game(&session_id, &player1_won);
+
+                env.events().publish(
+                    (symbol_short!("gameend"),),
+                    (session_id, player.clone(), player1_won),
+                );
+            }
+
             env.events().publish(
                 (symbol_short!("king"),),
                 (player.clone(), game_round_id, trial_round_id),
@@ -298,11 +419,28 @@ impl Throne {
             .expect("Backend public key not set")
     }
 
+    /// Get Game Hub address
+    pub fn get_game_hub(env: Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&DataKey::GameHub)
+            .expect("Game Hub not configured")
+    }
+
+    /// Get current session ID
+    pub fn get_session_id(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DataKey::SessionId)
+            .unwrap_or(0)
+    }
+
     // ========================================================================
     // ADMIN METHODS
     // ========================================================================
 
     /// Start a new round (admin only)
+    /// Resets game state for a fresh competition
     pub fn start_new_round(env: Env, admin: Address) {
         admin.require_auth();
 
@@ -317,6 +455,12 @@ impl Throne {
         env.storage().instance().set(&DataKey::RoundId, &new_round);
         env.storage().instance().set(&DataKey::IsLocked, &false);
         env.storage().instance().remove(&DataKey::King);
+        
+        // Reset session data for new round
+        env.storage().instance().set(&DataKey::SessionStarted, &false);
+        env.storage().instance().remove(&DataKey::SessionId);
+        env.storage().instance().remove(&DataKey::SessionPlayer1);
+        env.storage().instance().remove(&DataKey::SessionPlayer2);
 
         env.events()
             .publish((symbol_short!("newround"),), (new_round,));
