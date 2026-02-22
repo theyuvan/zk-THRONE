@@ -6,11 +6,52 @@ interface MemoryOfCrownTrialProps {
   onComplete: () => void;
 }
 
+// ============================================================================
+// 10 DIFFERENT WORD SETS FOR VARIETY
+// ============================================================================
 const WORD_SETS = [
+  // Set 1: Royal Kingdom
   ['THRONE', 'CROWN', 'SCEPTER', 'KINGDOM', 'ROYAL', 'SOVEREIGN', 'DECREE', 'MAJESTY', 'HERALD', 'EMPIRE'],
+  
+  // Set 2: Ancient Treasures
+  ['GOLD', 'SILVER', 'DIAMOND', 'RUBY', 'EMERALD', 'SAPPHIRE', 'PEARL', 'CRYSTAL', 'JEWEL', 'TREASURE'],
+  
+  // Set 3: Warrior Titles
+  ['KNIGHT', 'WARRIOR', 'CHAMPION', 'GUARDIAN', 'DEFENDER', 'SENTINEL', 'PALADIN', 'CRUSADER', 'HERO', 'PROTECTOR'],
+  
+  // Set 4: Mythical Creatures
+  ['DRAGON', 'PHOENIX', 'GRIFFIN', 'UNICORN', 'KRAKEN', 'BASILISK', 'PEGASUS', 'CHIMERA', 'HYDRA', 'SPHINX'],
+  
+  // Set 5: Magic & Spells
+  ['MAGIC', 'SPELL', 'ENCHANT', 'WAND', 'POTION', 'CHARM', 'RUNE', 'ORACLE', 'MYSTIC', 'ARCANE'],
+  
+  // Set 6: Celestial Bodies
+  ['STAR', 'MOON', 'SUN', 'COMET', 'GALAXY', 'NEBULA', 'METEOR', 'PLANET', 'COSMOS', 'ECLIPSE'],
+  
+  // Set 7: Elements & Forces
+  ['FIRE', 'WATER', 'EARTH', 'WIND', 'LIGHTNING', 'ICE', 'STORM', 'THUNDER', 'FLAME', 'FROST'],
+  
+  // Set 8: Ancient Weapons
+  ['SWORD', 'SHIELD', 'SPEAR', 'BOW', 'ARROW', 'DAGGER', 'HAMMER', 'AXE', 'LANCE', 'BLADE'],
+  
+  // Set 9: Sacred Places
+  ['TEMPLE', 'SHRINE', 'ALTAR', 'SANCTUM', 'CHAPEL', 'CITADEL', 'FORTRESS', 'CATHEDRAL', 'MONASTERY', 'HOLY'],
+  
+  // Set 10: Time & Destiny
+  ['FATE', 'DESTINY', 'PROPHECY', 'ORACLE', 'VISION', 'FUTURE', 'PAST', 'ETERNAL', 'LEGEND', 'MYTH'],
 ];
 
+// Select a random word set on component mount
+const getRandomWordSet = () => {
+  const randomIndex = Math.floor(Math.random() * WORD_SETS.length);
+  console.log(`🎲 MemoryOfCrown: Selected word set ${randomIndex + 1}/${WORD_SETS.length}`);
+  return WORD_SETS[randomIndex];
+};
+
 export default function MemoryOfCrownTrial({ onComplete }: MemoryOfCrownTrialProps) {
+  // Select a random word set on component mount (only happens once)
+  const [words] = useState(() => getRandomWordSet());
+  
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<'memorize' | 'recall' | 'result'>('memorize');
   const [memorizeTime, setMemorizeTime] = useState(5);
@@ -19,8 +60,6 @@ export default function MemoryOfCrownTrial({ onComplete }: MemoryOfCrownTrialPro
   const [isLocked, setIsLocked] = useState(false);
   const [lockTime, setLockTime] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-
-  const words = WORD_SETS[round];
 
   useEffect(() => {
     if (lockTime > 0) {
@@ -62,15 +101,7 @@ export default function MemoryOfCrownTrial({ onComplete }: MemoryOfCrownTrialPro
     if (isCorrect) {
       setFeedback('correct');
       setTimeout(() => {
-        if (round < WORD_SETS.length - 1) {
-          setRound(round + 1);
-          setPhase('memorize');
-          setMemorizeTime(5);
-          setRecalledWords([]);
-          setFeedback(null);
-        } else {
-          onComplete();
-        }
+        onComplete();
       }, 2000);
     } else {
       setFeedback('wrong');
