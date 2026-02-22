@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trial } from '@/types/game';
 import ParticleField from '@/components/effects/ParticleField';
 import * as THREE from 'three';
+import { HelpCircle, X } from 'lucide-react';
 
 // New Trial Components
 import CipherGridTrial from '@/components/trials/CipherGridTrial';
@@ -384,9 +385,71 @@ function GenericGame({ onSolve, trial }: { onSolve: () => void; trial: Trial }) 
   );
 }
 
+// Trial Rules/Instructions
+const TRIAL_RULES: Record<string, { objective: string; howToPlay: string[]; tip: string }> = {
+  colorSigil: {
+    objective: 'Solve the crossword puzzle grid by correctly filling all 6 answers',
+    howToPlay: [
+      'Review all 6 questions (3 horizontal, 3 vertical) in the preview',
+      'Click "START SOLVING" when ready to begin',
+      'Click any cell in the 3×3 grid and type A-Z letters',
+      'Fill all horizontal words (rows) and vertical words (columns)',
+      'Press "SUBMIT ANSWER" when complete - all 6 words must be correct',
+      'Wrong answers lock the grid for 2 minutes penalty'
+    ],
+    tip: 'Remember: intersecting letters must match where horizontal and vertical words cross.'
+  },
+  logicLabyrinth: {
+    objective: 'Navigate through the logic maze using deductive reasoning',
+    howToPlay: [
+      'Find the correct path through the numbered grid',
+      'Look for a logical sequence in the numbers',
+      'Click tiles in the exact order to complete the path',
+      'Wrong path resets - think carefully before each step'
+    ],
+    tip: 'The numbers follow a mathematical pattern. Study them carefully.'
+  },
+  patternOracle: {
+    objective: 'Decipher the pattern hidden within the oracle\'s vision',
+    howToPlay: [
+      'Study the pattern presented by the Oracle',
+      'Identify the repeating sequence in colored symbols',
+      'Select the next item in the pattern',
+      'Correct answers unlock deeper mysteries'
+    ],
+    tip: 'Patterns exist in all things. Trust your intuition.'
+  },
+  memoryOfCrown: {
+    objective: 'Prove your memory is worthy of the crown',
+    howToPlay: [
+      'Watch the sequence of glowing symbols carefully',
+      'Wait for the sequence to complete',
+      'Repeat the exact sequence by clicking the symbols',
+      'Each level adds more symbols to remember'
+    ],
+    tip: 'A true ruler remembers all who came before them.'
+  },
+  finalOath: {
+    objective: 'Take the ultimate oath to claim your sovereignty',
+    howToPlay: [
+      'Read the sacred oath presented to you',
+      'Understand the weight of your commitment',
+      'Click "I ACCEPT THE OATH" when ready',
+      'This binds you to the throne\'s eternal contract'
+    ],
+    tip: 'The throne tests not just skill, but conviction.'
+  }
+};
+
 export default function TrialScene({ trial, trialNumber, totalTrials, onComplete, onBack, isSubmitting = false }: TrialSceneProps) {
   const [completed, setCompleted] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const SceneComponent = trialScenes[trial.id] || DefaultTrialScene;
+  const rules = TRIAL_RULES[trial.id] || {
+    objective: trial.description,
+    howToPlay: ['Complete the trial to proceed', 'Follow the on-screen instructions'],
+    tip: 'Every trial has a solution. Observe carefully.'
+  };
 
   const handleTrialComplete = () => {
     setCompleted(true);
@@ -445,6 +508,127 @@ export default function TrialScene({ trial, trialNumber, totalTrials, onComplete
         className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at center, transparent 25%, hsl(240 20% 4% / 0.85) 100%)' }}
       />
+
+      {/* Rules Button - Middle Right */}
+      <motion.button
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5 }}
+        onClick={() => setShowRules(true)}
+        className="absolute right-6 top-1/2 transform -translate-y-1/2 p-3 rounded-lg transition-all duration-300 hover:scale-110 z-10"
+        style={{
+          background: 'hsl(var(--gold) / 0.1)',
+          border: '1px solid hsl(var(--gold) / 0.5)',
+          color: 'hsl(var(--gold))',
+          boxShadow: '0 0 20px hsl(var(--gold) / 0.3)'
+        }}
+        title="View Rules"
+      >
+        <HelpCircle className="w-6 h-6" />
+      </motion.button>
+
+      {/* Rules Dialog */}
+      <AnimatePresence>
+        {showRules && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowRules(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="panel-arcane max-w-2xl w-full p-8 relative"
+              style={{
+                maxHeight: '80vh',
+                overflowY: 'auto'
+              }}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowRules(false)}
+                className="absolute top-4 right-4 p-2 rounded-lg transition-all hover:scale-110"
+                style={{
+                  background: 'hsl(var(--gold) / 0.1)',
+                  border: '1px solid hsl(var(--gold) / 0.3)',
+                  color: 'hsl(var(--gold))'
+                }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Title */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <HelpCircle className="w-8 h-8" style={{ color: 'hsl(var(--gold))' }} />
+                  <h2 className="text-3xl font-bold text-gold-glow" style={{ fontFamily: 'var(--font-display)' }}>
+                    {trial.name.toUpperCase()}
+                  </h2>
+                </div>
+                <p className="text-xs tracking-widest" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-body)' }}>
+                  TRIAL {trialNumber} OF {totalTrials}
+                </p>
+              </div>
+
+              {/* Objective */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'hsl(var(--gold))', fontFamily: 'var(--font-display)' }}>
+                  OBJECTIVE
+                </h3>
+                <p className="text-sm" style={{ color: 'hsl(var(--foreground) / 0.8)', fontFamily: 'var(--font-body)' }}>
+                  {rules.objective}
+                </p>
+              </div>
+
+              {/* How to Play */}
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-3" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-display)' }}>
+                  HOW TO PLAY
+                </h3>
+                <ol className="space-y-2">
+                  {rules.howToPlay.map((step, index) => (
+                    <li key={index} className="flex gap-3">
+                      <span className="text-sm font-bold" style={{ color: 'hsl(var(--neon))', fontFamily: 'var(--font-display)', minWidth: '24px' }}>
+                        {index + 1}.
+                      </span>
+                      <span className="text-sm" style={{ color: 'hsl(var(--foreground) / 0.8)', fontFamily: 'var(--font-body)' }}>
+                        {step}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              {/* Tip */}
+              <div className="p-4 rounded-lg" style={{ background: 'hsl(var(--gold) / 0.1)', border: '1px solid hsl(var(--gold) / 0.3)' }}>
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">💡</span>
+                  <div>
+                    <h4 className="text-xs font-bold tracking-widest mb-1" style={{ color: 'hsl(var(--gold))', fontFamily: 'var(--font-body)' }}>
+                      WISDOM
+                    </h4>
+                    <p className="text-sm italic" style={{ color: 'hsl(var(--foreground) / 0.7)', fontFamily: 'var(--font-body)' }}>
+                      {rules.tip}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Start Button */}
+              <button
+                onClick={() => setShowRules(false)}
+                className="btn-throne w-full mt-6 py-3"
+              >
+                BEGIN TRIAL
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* UI */}
       <div className="absolute inset-0 flex flex-col items-center justify-between pointer-events-none">
