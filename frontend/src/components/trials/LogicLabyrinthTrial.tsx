@@ -25,13 +25,113 @@ const MAZE = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
-const LOGIC_GATES = [
-  { pos: [2, 13], question: 'Is 25 divisible by 5?', answer: true },
-  { pos: [7, 2], question: 'Is 9 a prime number?', answer: false },
-  { pos: [11, 8], question: 'Is 2+2 equal to 4?', answer: true },
+// ============================================================================
+// 10 DIFFERENT LOGIC GATE QUESTION SETS FOR VARIETY
+// ============================================================================
+const LOGIC_GATE_SETS = [
+  {
+    id: 1,
+    theme: 'Math Basics',
+    gates: [
+      { pos: [2, 13], question: 'Is 25 divisible by 5?', answer: true },
+      { pos: [7, 2], question: 'Is 9 a prime number?', answer: false },
+      { pos: [11, 8], question: 'Is 2+2 equal to 4?', answer: true },
+    ]
+  },
+  {
+    id: 2,
+    theme: 'Boolean Logic',
+    gates: [
+      { pos: [2, 13], question: 'TRUE AND FALSE equals TRUE?', answer: false },
+      { pos: [7, 2], question: 'TRUE OR FALSE equals TRUE?', answer: true },
+      { pos: [11, 8], question: 'NOT TRUE equals FALSE?', answer: true },
+    ]
+  },
+  {
+    id: 3,
+    theme: 'Number Theory',
+    gates: [
+      { pos: [2, 13], question: 'Is 16 a perfect square?', answer: true },
+      { pos: [7, 2], question: 'Is 15 divisible by 4?', answer: false },
+      { pos: [11, 8], question: 'Is 7 greater than 5?', answer: true },
+    ]
+  },
+  {
+    id: 4,
+    theme: 'Simple Arithmetic',
+    gates: [
+      { pos: [2, 13], question: 'Does 3 × 4 equal 12?', answer: true },
+      { pos: [7, 2], question: 'Does 10 - 6 equal 5?', answer: false },
+      { pos: [11, 8], question: 'Does 8 ÷ 2 equal 4?', answer: true },
+    ]
+  },
+  {
+    id: 5,
+    theme: 'Comparison',
+    gates: [
+      { pos: [2, 13], question: 'Is 100 > 50?', answer: true },
+      { pos: [7, 2], question: 'Is 20 < 15?', answer: false },
+      { pos: [11, 8], question: 'Is 33 ≤ 33?', answer: true },
+    ]
+  },
+  {
+    id: 6,
+    theme: 'Even & Odd',
+    gates: [
+      { pos: [2, 13], question: 'Is 42 an even number?', answer: true },
+      { pos: [7, 2], question: 'Is 11 an even number?', answer: false },
+      { pos: [11, 8], question: 'Is 28 divisible by 2?', answer: true },
+    ]
+  },
+  {
+    id: 7,
+    theme: 'Primes',
+    gates: [
+      { pos: [2, 13], question: 'Is 13 a prime number?', answer: true },
+      { pos: [7, 2], question: 'Is 12 a prime number?', answer: false },
+      { pos: [11, 8], question: 'Is 17 a prime number?', answer: true },
+    ]
+  },
+  {
+    id: 8,
+    theme: 'Powers',
+    gates: [
+      { pos: [2, 13], question: 'Is 2³ equal to 8?', answer: true },
+      { pos: [7, 2], question: 'Is 3² equal to 6?', answer: false },
+      { pos: [11, 8], question: 'Is 5² equal to 25?', answer: true },
+    ]
+  },
+  {
+    id: 9,
+    theme: 'Algebra',
+    gates: [
+      { pos: [2, 13], question: 'If x = 5, is x + 3 = 8?', answer: true },
+      { pos: [7, 2], question: 'If y = 4, is 2y = 10?', answer: false },
+      { pos: [11, 8], question: 'If z = 6, is z - 2 = 4?', answer: true },
+    ]
+  },
+  {
+    id: 10,
+    theme: 'Mixed Logic',
+    gates: [
+      { pos: [2, 13], question: 'Is (5 > 3) AND (2 < 4)?', answer: true },
+      { pos: [7, 2], question: 'Is (10 = 11) OR (8 = 9)?', answer: false },
+      { pos: [11, 8], question: 'Is NOT(3 > 5)?', answer: true },
+    ]
+  }
 ];
 
+// Select a random logic gate set on component mount
+const getRandomLogicGateSet = () => {
+  const randomIndex = Math.floor(Math.random() * LOGIC_GATE_SETS.length);
+  console.log(`🎲 LogicLabyrinth: Selected "${LOGIC_GATE_SETS[randomIndex].theme}" questions (${randomIndex + 1}/${LOGIC_GATE_SETS.length})`);
+  return LOGIC_GATE_SETS[randomIndex].gates;
+};
+
 export default function LogicLabyrinthTrial({ onComplete }: LogicLabyrinthTrialProps) {
+  // Select a random logic gate set on component mount (only happens once)
+  const [LOGIC_GATES] = useState(() => getRandomLogicGateSet());
+  
   const [playerPos, setPlayerPos] = useState<[number, number]>([1, 1]);
   const [isLocked, setIsLocked] = useState(false);
   const [lockTime, setLockTime] = useState(0);
