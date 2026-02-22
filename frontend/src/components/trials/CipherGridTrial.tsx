@@ -15,50 +15,115 @@ interface Puzzle {
   direction: Direction;
 }
 
-const PUZZLES: Puzzle[] = [
-  // Horizontal words (Row 1, Row 2, Row 3)
-  {
-    question: 'Armed conflict between nations (3 letters)',
-    answer: 'WAR',
-    startPos: [0, 0],
-    direction: 'horizontal',
-  },
-  {
-    question: 'A distinct period in history (3 letters)',
-    answer: 'ERA',
-    startPos: [1, 0],
-    direction: 'horizontal',
-  },
-  {
-    question: 'The number that comes after nine (3 letters)',
-    answer: 'TEN',
-    startPos: [2, 0],
-    direction: 'horizontal',
-  },
-  // Vertical words (Column 1, Column 2, Column 3)
-  {
-    question: 'Covered or soaked with water (3 letters)',
-    answer: 'WET',
-    startPos: [0, 0],
-    direction: 'vertical',
-  },
-  {
-    question: 'Plural form of the verb "is" (3 letters)',
-    answer: 'ARE',
-    startPos: [0, 1],
-    direction: 'vertical',
-  },
-  {
-    question: 'Past tense of the verb "run" (3 letters)',
-    answer: 'RAN',
-    startPos: [0, 2],
-    direction: 'vertical',
-  },
+// ============================================================================
+// 10 DIFFERENT PUZZLE SETS FOR VARIETY
+// ============================================================================
+const PUZZLE_SETS: Puzzle[][] = [
+  // Set 1: Animals & Nature
+  [
+    { question: 'Horse-drawn vehicle (3 letters)', answer: 'CAB', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Number after nine (3 letters)', answer: 'TEN', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Feline pet (3 letters)', answer: 'CAT', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Male name (3 letters)', answer: 'BEN', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 2: Time & War
+  [
+    { question: 'Armed conflict (3 letters)', answer: 'WAR', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Historical period (3 letters)', answer: 'ERA', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Number after nine (3 letters)', answer: 'TEN', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Moist (3 letters)', answer: 'WET', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Plural of is (3 letters)', answer: 'ARE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Past of run (3 letters)', answer: 'RAN', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 3: Food & Kitchen
+  [
+    { question: 'Hot drink (3 letters)', answer: 'TEA', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Consume food (3 letters)', answer: 'EAT', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Past of eat (3 letters)', answer: 'ATE', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Hot drink (3 letters)', answer: 'TEA', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Consume food (3 letters)', answer: 'EAT', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Past of eat (3 letters)', answer: 'ATE', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 4: Ocean & Sky
+  [
+    { question: 'Solar energy (3 letters)', answer: 'SUN', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Morning moisture (3 letters)', answer: 'DEW', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Not happy (3 letters)', answer: 'SAD', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Suffix meaning "state" (3 letters)', answer: 'URE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Not old (3 letters)', answer: 'NEW', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 5: Colors & Art
+  [
+    { question: 'Fishing pole (3 letters)', answer: 'ROD', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Number after nine (3 letters)', answer: 'TEN', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Rodent (3 letters)', answer: 'RAT', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Mineral deposit (3 letters)', answer: 'ORE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Animal lair (3 letters)', answer: 'DEN', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 6: Transportation
+  [
+    { question: 'Vehicle (3 letters)', answer: 'CAR', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Sleep furniture (3 letters)', answer: 'BED', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Taxi (3 letters)', answer: 'CAB', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Primary color (3 letters)', answer: 'RED', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 7: Numbers & Math
+  [
+    { question: 'Highest point (3 letters)', answer: 'TOP', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Sleep furniture (3 letters)', answer: 'BED', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Hinged barrier (3 letters)', answer: 'TAB', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Mineral deposit (3 letters)', answer: 'ORE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Foot part (3 letters)', answer: 'PED', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 8: Sports & Games
+  [
+    { question: 'Sports contest (3 letters)', answer: 'WIN', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Primary color (3 letters)', answer: 'RED', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Conflict (3 letters)', answer: 'WAR', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Anger (3 letters)', answer: 'IRE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Male name (3 letters)', answer: 'NED', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 9: House & Home
+  [
+    { question: 'Opposite of good (3 letters)', answer: 'BAD', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Past tense of eat (3 letters)', answer: 'ATE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Number after nine (3 letters)', answer: 'TEN', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Flying mammal (3 letters)', answer: 'BAT', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Past tense of eat (3 letters)', answer: 'ATE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Cozy room (3 letters)', answer: 'DEN', startPos: [0, 2], direction: 'vertical' },
+  ],
+  // Set 10: Body & Health
+  [
+    { question: 'Archery weapon (3 letters)', answer: 'BOW', startPos: [0, 0], direction: 'horizontal' },
+    { question: 'Exist (3 letters)', answer: 'ARE', startPos: [1, 0], direction: 'horizontal' },
+    { question: 'Animal lair (3 letters)', answer: 'DEN', startPos: [2, 0], direction: 'horizontal' },
+    { question: 'Not good (3 letters)', answer: 'BAD', startPos: [0, 0], direction: 'vertical' },
+    { question: 'Mineral deposit (3 letters)', answer: 'ORE', startPos: [0, 1], direction: 'vertical' },
+    { question: 'Cyst (3 letters)', answer: 'WEN', startPos: [0, 2], direction: 'vertical' },
+  ],
 ];
+
+// Select a random puzzle set (only happens once per component mount)
+const getRandomPuzzleSet = () => {
+  const randomIndex = Math.floor(Math.random() * PUZZLE_SETS.length);
+  console.log(`🎲 CipherGrid: Selected puzzle set ${randomIndex + 1}/${PUZZLE_SETS.length}`);
+  return PUZZLE_SETS[randomIndex];
+};
 
 const GRID_SIZE = 3;
 
 export default function CipherGridTrial({ onComplete }: CipherGridTrialProps) {
+  // Select a random puzzle set on component mount (only happens once)
+  const [PUZZLES] = useState<Puzzle[]>(() => getRandomPuzzleSet());
+  
   const [grid, setGrid] = useState<string[][]>(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('')));
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
   const [isLocked, setIsLocked] = useState(false);
