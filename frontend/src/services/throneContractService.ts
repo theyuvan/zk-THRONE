@@ -360,6 +360,128 @@ class ThroneContractService {
       return 1;
     }
   }
+
+  /**
+   * Start multiplayer session - calls Game Hub's start_game()
+   * REQUIRED for hackathon compliance
+   * Called when countdown finishes and game begins
+   */
+  async startMultiplayerSession(
+    sessionId: number,
+    player1: string,
+    player2: string
+  ): Promise<{
+    success: boolean;
+    txHash?: string;
+    error?: string;
+  }> {
+    try {
+      const publicKey = walletService.getPublicKey();
+      if (!publicKey) {
+        throw new Error("Wallet not connected");
+      }
+
+      console.log("🎮 Starting multiplayer session on contract...");
+      console.log("📊 Session:", { sessionId, player1, player2 });
+
+      // STEP 1: Load source account
+      const sourceAccount = await this.server.getAccount(publicKey);
+
+      // STEP 2: Convert parameters to Soroban types
+      const player1Address = Address.fromString(player1);
+      const player2Address = Address.fromString(player2);
+
+      // STEP 3: Build contract call
+      const operation = this.contract.call(
+        "start_multiplayer_session",
+        nativeToScVal(sessionId, { type: "u32" }),
+        player1Address.toScVal(),
+        player2Address.toScVal()
+      );
+
+      // STEP 4: Build transaction
+      let transaction = new TransactionBuilder(sourceAccount, {
+        fee: "10000000", // 1 XLM max fee for Soroban
+        networkPassphrase: CONFIG.networkPassphrase,
+      })
+        .addOperation(operation)
+        .setTimeout(300)
+        .build();
+
+      // STEP 5: Simulate to get auth
+      console.log("🔍 Simulating transaction...");
+      const simulated = await this.server.simulateTransaction(transaction);
+
+      if (SorobanRpc.Api.isSimulationError(simulated)) {
+        console.error("❌ Simulation error:", simulated);
+        throw new Error(`Simulation failed: ${simulated.error}`);
+      }
+
+      // STEP 6: Prepare transaction with auth
+      transaction = SorobanRpc.assembleTransaction(
+        transaction,
+        simulated
+      ).build();
+
+      // STEP 7: Sign with wallet
+      const signedXdr = await walletService.signTransaction(
+        transaction.toXDR()
+      );
+
+      if (!signedXdr) {
+        throw new Error("User rejected transaction");
+      }
+
+      // STEP 8: Submit transaction
+      console.log("📤 Submitting start_multiplayer_session transaction...");
+      const signedTx = TransactionBuilder.fromXDR(
+        signedXdr,
+        CONFIG.networkPassphrase
+      );
+
+      const sendResponse = await this.server.sendTransaction(signedTx);
+
+      if (sendResponse.status === "PENDING") {
+        console.log("⏳ Transaction pending, waiting for confirmation...");
+
+        // Wait for transaction to be included
+        let getResponse = await this.server.getTransaction(sendResponse.hash);
+        const startTime = Date.now();
+
+        while (
+          getResponse.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND
+        ) {
+          if (Date.now() - startTime > 30000) {
+            throw new Error("Transaction confirmation timeout");
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          getResponse = await this.server.getTransaction(sendResponse.hash);
+        }
+
+        if (getResponse.status === SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+          console.log("✅ Multiplayer session started on-chain!");
+          console.log("🏆 Game Hub notified via start_game()");
+          console.log(`🔗 TX: ${sendResponse.hash}`);
+
+          return {
+            success: true,
+            txHash: sendResponse.hash,
+          };
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } else {
+        throw new Error("Transaction submission failed");
+      }
+    } catch (error: any) {
+      console.error("❌ Failed to start multiplayer session:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to start session",
+      };
+    }
+  }
 }
 
 export const throneContractService = new ThroneContractService();
