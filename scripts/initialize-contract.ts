@@ -1,18 +1,20 @@
 #!/usr/bin/env bun
-// Initialize the Throne contract with backend public key
+// Initialize the Throne contract with backend public key and Game Hub address
 
 import { Contract, rpc, TransactionBuilder, Keypair, Account, BASE_FEE, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 
-const CONTRACT_ID = "CD6RYSLZXSPLF7U5HOV5B7N62ICZEKXRZUAM6KWIEOF2NP2GTTT3BGOO";
+const CONTRACT_ID = "CBQ7XTUSGPDVBJYSXKPDE5L4L2KSDXD2DALWH3SKWWP4DKXLVKXCRBL3";
 const RPC_URL = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPHRASE = "Test SDF Network ; September 2015";
 const BACKEND_PUBLIC_KEY = "GAUXYHLV65LYUIRK7QDQKAVSDGG7F4PV2HZFW2OVIUXINIWQGG2BGK5V";
+const GAME_HUB_ADDRESS = "CB4VZAT2U3UC6XFK3N23SKRF2NDCMP3QHJYMCHHFMZO7MRQO6DQ2EMYG"; // Testnet Game Hub (REQUIRED for hackathon)
 const REQUIRED_TRIALS = 3;
 
 async function initializeContract(adminSecret: string) {
   console.log("🔧 Initializing Throne Contract...");
   console.log(`📝 Contract: ${CONTRACT_ID}`);
   console.log(`🔑 Backend Key: ${BACKEND_PUBLIC_KEY}`);
+  console.log(`🎮 Game Hub: ${GAME_HUB_ADDRESS}`);
 
   const server = new rpc.Server(RPC_URL);
   const adminKeypair = Keypair.fromSecret(adminSecret);
@@ -28,13 +30,14 @@ async function initializeContract(adminSecret: string) {
   const adminAccount = await server.getAccount(adminAddress);
   const account = new Account(adminAccount.accountId(), adminAccount.sequenceNumber());
 
-  // Build contract call
+  // Build contract call with Game Hub address
   const contract = new Contract(CONTRACT_ID);
   const operation = contract.call(
     "initialize",
     nativeToScVal(adminAddress, { type: "address" }),
     xdr.ScVal.scvBytes(backendKeyBytes),
-    nativeToScVal(REQUIRED_TRIALS, { type: "u32" })
+    nativeToScVal(REQUIRED_TRIALS, { type: "u32" }),
+    nativeToScVal(GAME_HUB_ADDRESS, { type: "address" })  // Game Hub integration (hackathon requirement)
   );
 
   const transaction = new TransactionBuilder(account, {
