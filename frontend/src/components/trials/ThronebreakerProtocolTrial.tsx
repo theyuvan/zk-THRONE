@@ -4,6 +4,7 @@ import { Lock, Target, Crosshair } from 'lucide-react';
 
 interface ThronebreakerProtocolTrialProps {
   onComplete: () => void;
+  variantIndex?: number; // NEW: Deterministic question set (0-9)
 }
 
 interface Question {
@@ -98,16 +99,20 @@ const QUESTION_SETS: Question[][] = [
   ],
 ];
 
-// Select a random question set on component mount
-const getRandomQuestionSet = () => {
-  const randomIndex = Math.floor(Math.random() * QUESTION_SETS.length);
-  console.log(`🎲 ThronebreakerProtocol: Selected question set ${randomIndex + 1}/${QUESTION_SETS.length}`);
-  return QUESTION_SETS[randomIndex];
+// Select question set based on variant index (deterministic)
+// If no variantIndex provided, use random (for single player)
+const getQuestionSet = (variantIndex?: number) => {
+  const index = variantIndex !== undefined ? variantIndex % QUESTION_SETS.length : Math.floor(Math.random() * QUESTION_SETS.length);
+  console.log(`🎲 ThronebreakerProtocol: Using question set ${index + 1}/${QUESTION_SETS.length}${variantIndex !== undefined ? ` (from room, variantIndex=${variantIndex})` : ' (random)'}`);
+  console.log(`📋 First question: "${QUESTION_SETS[index][0].question}" → Correct: "${QUESTION_SETS[index][0].correctAnswer}"`);
+  return QUESTION_SETS[index];
 };
 
-export default function ThronebreakerProtocolTrial({ onComplete }: ThronebreakerProtocolTrialProps) {
-  // Select a random question set on component mount (only happens once)
-  const [QUESTIONS] = useState(() => getRandomQuestionSet());
+export default function ThronebreakerProtocolTrial({ onComplete, variantIndex }: ThronebreakerProtocolTrialProps) {
+  console.log('🔄 ThronebreakerProtocolTrial mounted with variantIndex:', variantIndex);
+  
+  // Select question set based on variant index (deterministic per room)
+  const [QUESTIONS] = useState(() => getQuestionSet(variantIndex));
   
   const [round, setRound] = useState(0);
   const [ammo, setAmmo] = useState(1);
