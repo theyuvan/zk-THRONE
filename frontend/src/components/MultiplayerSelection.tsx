@@ -3,7 +3,7 @@ import { Users, Plus, LogIn, Copy, Check, Unlock, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Trial } from '@/types/game';
+import { Trial, TrialMode } from '@/types/game';
 import { useWallet } from '@/hooks/useWallet';
 
 interface MultiplayerSelectionProps {
@@ -11,7 +11,7 @@ interface MultiplayerSelectionProps {
   onClose: () => void;
   onHost: (selectedTrials: Trial[]) => void;
   onJoin: (roomCode: string) => void;
-  mode: 3 | 5 | 7;
+  mode: TrialMode;
   onShowTrialSelection: () => void;
   onShowRoomLobby: () => void;
   onRoomCreated: (roomId: string, joinCode: string) => void;

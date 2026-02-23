@@ -25,11 +25,6 @@ export function generateTrialSolution(trialId: TrialId, roundId: number): string
       // Backend validates: solution === "colorsigil_complete" || solution.startsWith("COLORSIGIL:")
       return `COLORSIGIL:complete:${timestamp}`;
       
-    case 'hiddenSigil':
-      // Trial 7 in backend: Hidden Sigil
-      // Backend validates: solution === "hiddensigil_complete" || solution.startsWith("HIDDEN:")
-      return `HIDDEN:complete:${timestamp}`;
-      
     case 'logicLabyrinth':
       // Trial 5 in backend: Logic Labyrinth
       // Backend validates: solution === "logiclabyrinth_complete" || solution.startsWith("LOGIC:")
@@ -43,11 +38,6 @@ export function generateTrialSolution(trialId: TrialId, roundId: number): string
     case 'memoryOfCrown':
       // Trial 6 in backend: Memory of Crowns
       // Backend validates: solution === "memoryofcrowns_complete" || solution.startsWith("MEMORY:")
-      return `MEMORY:complete:${timestamp}`;
-      
-    case 'timekeeper':
-      // Trial 6: Trap Detection / Timekeeper (same as Memory in backend)
-      // Using MEMORY: prefix to match backend
       return `MEMORY:complete:${timestamp}`;
       
     case 'finalOath':
@@ -68,12 +58,10 @@ export function generateTrialSolution(trialId: TrialId, roundId: number): string
 export function getTrialIdFromIndex(index: number): TrialId {
   const mapping: Record<number, TrialId> = {
     1: 'colorSigil',
-    2: 'hiddenSigil', 
-    3: 'logicLabyrinth',
-    4: 'patternOracle',
-    5: 'memoryOfCrown',
-    6: 'timekeeper',
-    7: 'finalOath',
+    2: 'logicLabyrinth',
+    3: 'patternOracle',
+    4: 'memoryOfCrown',
+    5: 'finalOath',
   };
   
   return mapping[index] || 'colorSigil';
