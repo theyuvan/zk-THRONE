@@ -337,8 +337,11 @@ bun run bindings throne-noir
 ## Links
 
 **Play Now (Testnet):** https://zk--throne.vercel.app
+
 **Demo Video:** https://youtu.be/CwzEedk0x6E
-**GitHub :** https://github.com/theyuvan/zk-THRONE  
+
+**GitHub :** https://github.com/theyuvan/zk-THRONE
+
 **Contract Explorer:** https://stellar.expert/explorer/testnet/contract/CBQ7XTUSGPDVBJYSXKPDE5L4L2KSDXD2DALWH3SKWWP4DKXLVKXCRBL3  
 
 
