@@ -354,5 +354,5 @@ Built for the **Stellar ZK Gaming Hackathon 2026**.
 ---
 
 **License:** MIT  
-**Author:** Yuvan raj 
+**Author:** Yuvan raj    
 **Built:** February 2026
