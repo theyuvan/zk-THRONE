@@ -4,6 +4,7 @@ import { Lock } from 'lucide-react';
 
 interface PatternOracleTrialProps {
   onComplete: () => void;
+  variantIndex?: number; // NEW: Deterministic question set (0-9)
 }
 
 // ============================================================================
@@ -72,16 +73,20 @@ const PATTERN_SETS = [
   ],
 ];
 
-// Select a random pattern set on component mount
-const getRandomPatternSet = () => {
-  const randomIndex = Math.floor(Math.random() * PATTERN_SETS.length);
-  console.log(`🎲 PatternOracle: Selected pattern set ${randomIndex + 1}/${PATTERN_SETS.length}`);
-  return PATTERN_SETS[randomIndex];
+// Select pattern set based on variant index (deterministic)
+// If no variantIndex provided, use random (for single player)
+const getPatternSet = (variantIndex?: number) => {
+  const index = variantIndex !== undefined ? variantIndex % PATTERN_SETS.length : Math.floor(Math.random() * PATTERN_SETS.length);
+  console.log(`🎲 PatternOracle: Using pattern set ${index + 1}/${PATTERN_SETS.length}${variantIndex !== undefined ? ` (from room, variantIndex=${variantIndex})` : ' (random)'}`);
+  console.log(`📋 First pattern: [${PATTERN_SETS[index][0].sequence.join(', ')}] → ${PATTERN_SETS[index][0].correct}`);
+  return PATTERN_SETS[index];
 };
 
-export default function PatternOracleTrial({ onComplete }: PatternOracleTrialProps) {
-  // Select a random pattern set on component mount (only happens once)
-  const [PATTERNS] = useState(() => getRandomPatternSet());
+export default function PatternOracleTrial({ onComplete, variantIndex }: PatternOracleTrialProps) {
+  console.log('🔄 PatternOracleTrial mounted with variantIndex:', variantIndex);
+  
+  // Select pattern set based on variant index (deterministic per room)
+  const [PATTERNS] = useState(() => getPatternSet(variantIndex));
   
   const [currentPattern, setCurrentPattern] = useState(0);
   const [timeLeft, setTimeLeft] = useState(45);
