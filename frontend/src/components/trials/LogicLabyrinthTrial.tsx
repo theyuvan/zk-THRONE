@@ -4,6 +4,7 @@ import { Lock, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface LogicLabyrinthTrialProps {
   onComplete: () => void;
+  variantIndex?: number; // NEW: Deterministic question set (0-9)
 }
 
 // Maze grid (0=path, 1=wall, 2=trap, 3=logic gate, 4=exit)
@@ -121,16 +122,20 @@ const LOGIC_GATE_SETS = [
   }
 ];
 
-// Select a random logic gate set on component mount
-const getRandomLogicGateSet = () => {
-  const randomIndex = Math.floor(Math.random() * LOGIC_GATE_SETS.length);
-  console.log(`🎲 LogicLabyrinth: Selected "${LOGIC_GATE_SETS[randomIndex].theme}" questions (${randomIndex + 1}/${LOGIC_GATE_SETS.length})`);
-  return LOGIC_GATE_SETS[randomIndex].gates;
+// Select logic gate set based on variant index (deterministic)
+// If no variantIndex provided, use random (for single player)
+const getLogicGateSet = (variantIndex?: number) => {
+  const index = variantIndex !== undefined ? variantIndex % LOGIC_GATE_SETS.length : Math.floor(Math.random() * LOGIC_GATE_SETS.length);
+  console.log(`🎲 LogicLabyrinth: Using "${LOGIC_GATE_SETS[index].theme}" questions (${index + 1}/${LOGIC_GATE_SETS.length})${variantIndex !== undefined ? ` (from room, variantIndex=${variantIndex})` : ' (random)'}`);
+  console.log(`📋 First gate: "${LOGIC_GATE_SETS[index].gates[0].question}"`);
+  return LOGIC_GATE_SETS[index].gates;
 };
 
-export default function LogicLabyrinthTrial({ onComplete }: LogicLabyrinthTrialProps) {
-  // Select a random logic gate set on component mount (only happens once)
-  const [LOGIC_GATES] = useState(() => getRandomLogicGateSet());
+export default function LogicLabyrinthTrial({ onComplete, variantIndex }: LogicLabyrinthTrialProps) {
+  console.log('🔄 LogicLabyrinthTrial mounted with variantIndex:', variantIndex);
+  
+  // Select logic gate set based on variant index (deterministic per room)
+  const [LOGIC_GATES] = useState(() => getLogicGateSet(variantIndex));
   
   const [playerPos, setPlayerPos] = useState<[number, number]>([1, 1]);
   const [isLocked, setIsLocked] = useState(false);
