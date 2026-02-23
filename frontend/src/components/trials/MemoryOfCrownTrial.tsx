@@ -4,6 +4,7 @@ import { Lock, Eye, EyeOff } from 'lucide-react';
 
 interface MemoryOfCrownTrialProps {
   onComplete: () => void;
+  variantIndex?: number; // NEW: Deterministic question set (0-9)
 }
 
 // ============================================================================
@@ -41,16 +42,20 @@ const WORD_SETS = [
   ['FATE', 'DESTINY', 'PROPHECY', 'ORACLE', 'VISION', 'FUTURE', 'PAST', 'ETERNAL', 'LEGEND', 'MYTH'],
 ];
 
-// Select a random word set on component mount
-const getRandomWordSet = () => {
-  const randomIndex = Math.floor(Math.random() * WORD_SETS.length);
-  console.log(`🎲 MemoryOfCrown: Selected word set ${randomIndex + 1}/${WORD_SETS.length}`);
-  return WORD_SETS[randomIndex];
+// Select word set based on variant index (deterministic)
+// If no variantIndex provided, use random (for single player)
+const getWordSet = (variantIndex?: number) => {
+  const index = variantIndex !== undefined ? variantIndex % WORD_SETS.length : Math.floor(Math.random() * WORD_SETS.length);
+  console.log(`🎲 MemoryOfCrown: Using word set ${index + 1}/${WORD_SETS.length}${variantIndex !== undefined ? ` (from room, variantIndex=${variantIndex})` : ' (random)'}`);
+  console.log(`📋 First words: [${WORD_SETS[index].slice(0, 3).join(', ')}]`);
+  return WORD_SETS[index];
 };
 
-export default function MemoryOfCrownTrial({ onComplete }: MemoryOfCrownTrialProps) {
-  // Select a random word set on component mount (only happens once)
-  const [words] = useState(() => getRandomWordSet());
+export default function MemoryOfCrownTrial({ onComplete, variantIndex }: MemoryOfCrownTrialProps) {
+  console.log('🔄 MemoryOfCrownTrial mounted with variantIndex:', variantIndex);
+  
+  // Select word set based on variant index (deterministic per room)
+  const [words] = useState(() => getWordSet(variantIndex));
   
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<'memorize' | 'recall' | 'result'>('memorize');
