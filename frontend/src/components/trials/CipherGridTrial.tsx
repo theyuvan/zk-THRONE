@@ -4,6 +4,7 @@ import { Lock, Trash2 } from 'lucide-react';
 
 interface CipherGridTrialProps {
   onComplete: () => void;
+  variantIndex?: number; // NEW: Deterministic question set (0-9)
 }
 
 type Direction = 'horizontal' | 'vertical';
@@ -111,18 +112,22 @@ const PUZZLE_SETS: Puzzle[][] = [
   ],
 ];
 
-// Select a random puzzle set (only happens once per component mount)
-const getRandomPuzzleSet = () => {
-  const randomIndex = Math.floor(Math.random() * PUZZLE_SETS.length);
-  console.log(`🎲 CipherGrid: Selected puzzle set ${randomIndex + 1}/${PUZZLE_SETS.length}`);
-  return PUZZLE_SETS[randomIndex];
+// Select puzzle set based on variant index (deterministic)
+// If no variantIndex provided, use random (for single player)
+const getPuzzleSet = (variantIndex?: number) => {
+  const index = variantIndex !== undefined ? variantIndex % PUZZLE_SETS.length : Math.floor(Math.random() * PUZZLE_SETS.length);
+  console.log(`🎲 CipherGrid: Using puzzle set ${index + 1}/${PUZZLE_SETS.length}${variantIndex !== undefined ? ` (from room, variantIndex=${variantIndex})` : ' (random)'}`);
+  console.log(`📋 First clue: "${PUZZLE_SETS[index][0].question}"`);
+  return PUZZLE_SETS[index];
 };
 
 const GRID_SIZE = 3;
 
-export default function CipherGridTrial({ onComplete }: CipherGridTrialProps) {
-  // Select a random puzzle set on component mount (only happens once)
-  const [PUZZLES] = useState<Puzzle[]>(() => getRandomPuzzleSet());
+export default function CipherGridTrial({ onComplete, variantIndex }: CipherGridTrialProps) {
+  console.log('🔄 CipherGridTrial mounted with variantIndex:', variantIndex);
+  
+  // Select puzzle set based on variant index (deterministic per room)
+  const [PUZZLES] = useState<Puzzle[]>(() => getPuzzleSet(variantIndex));
   
   const [grid, setGrid] = useState<string[][]>(Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill('')));
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
