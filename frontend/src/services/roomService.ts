@@ -2,12 +2,21 @@
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3030";
 
+export interface QuestionVariants {
+  cipherGrid: number; // 0-9 (which puzzle set)
+  logicLabyrinth: number; // 0-9 (which logic gate set)
+  patternOracle: number; // 0-9 (which pattern set)
+  memoryOfCrown: number; // 0-9 (which word set)
+  thronebreakerProtocol: number; // 0-9 (which question set)
+}
+
 export interface RoomState {
   roomId: string;
   joinCode: string;
   hostWallet: string;
   maxPlayers: number;
   totalRounds: number;
+  questionVariants: QuestionVariants; // NEW: All players get same questions
   players: Player[];
   state: "WAITING" | "COUNTDOWN" | "IN_PROGRESS" | "FINISHED";
   currentRound: number;

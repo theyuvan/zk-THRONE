@@ -14,12 +14,26 @@ class RoomService {
     const roomId = crypto.randomBytes(4).toString("hex").toUpperCase();
     const joinCode = roomId.slice(0, 6); // Short code for sharing
 
+    // Generate deterministic question variant indices for this room
+    // All players in this room will get the SAME questions
+    // Different rooms get DIFFERENT question variants
+    const questionVariants = {
+      cipherGrid: Math.floor(Math.random() * 10), // 0-9 (10 puzzle sets)
+      logicLabyrinth: Math.floor(Math.random() * 10), // 0-9 (10 logic gate sets)
+      patternOracle: Math.floor(Math.random() * 10), // 0-9 (10 pattern sets)
+      memoryOfCrown: Math.floor(Math.random() * 10), // 0-9 (10 word sets)
+      thronebreakerProtocol: Math.floor(Math.random() * 10), // 0-9 (10 question sets)
+    };
+
+    console.log(`🎲 Room ${roomId} question variants:`, questionVariants);
+
     const room = {
       roomId,
       joinCode,
       hostWallet,
       maxPlayers,
       totalRounds,
+      questionVariants, // NEW: Store question variants for this room
       players: [
         {
           wallet: hostWallet,
@@ -107,6 +121,7 @@ class RoomService {
       hostWallet: room.hostWallet,
       maxPlayers: room.maxPlayers,
       totalRounds: room.totalRounds,
+      questionVariants: room.questionVariants, // NEW: Send question variants to all players
       players: publicPlayers,
       state: room.state,
       currentRound: room.currentRound,

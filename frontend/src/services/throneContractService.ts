@@ -130,8 +130,12 @@ class ThroneContractService {
 
       console.log("📊 Simulation result:", {
         status: SorobanRpc.Api.isSimulationSuccess(simulated) ? "SUCCESS" : "ERROR",
-        cost: simulated.cost,
-        restorePreamble: simulated.restorePreamble,
+        ...(SorobanRpc.Api.isSimulationSuccess(simulated) && {
+          cost: simulated.cost,
+          ...(SorobanRpc.Api.isSimulationRestore(simulated) && {
+            restorePreamble: simulated.restorePreamble,
+          }),
+        }),
       });
 
       if (SorobanRpc.Api.isSimulationError(simulated)) {
@@ -311,7 +315,7 @@ class ThroneContractService {
         // Contract returns Option<Address>
         // Check if it's Some variant (has an address) or None
         try {
-          const address = StellarSdk.Address.fromScVal(result);
+          const address = Address.fromScVal(result);
           return address.toString();
         } catch (e) {
           // If conversion fails, it's probably None (no king yet)
@@ -364,7 +368,15 @@ class ThroneContractService {
   /**
    * Start multiplayer session - calls Game Hub's start_game()
    * REQUIRED for hackathon compliance
-   * Called when countdown finishes and game begins
+   * Called when countdown finishes and game begins (HOST ONLY)
+   * 
+   * NOTE: Game Hub only supports 2-player tracking
+   * For 3-4 player games, this should NOT be called (game works fine without it)
+   * The contract's end_game() is only called if this session is started
+   * 
+   * @param sessionId - Unique session identifier
+   * @param player1 - First player address (host)
+   * @param player2 - Second player address
    */
   async startMultiplayerSession(
     sessionId: number,

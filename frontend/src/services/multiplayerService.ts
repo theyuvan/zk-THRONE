@@ -11,6 +11,14 @@ export interface Player {
   isReady: boolean;
 }
 
+export interface QuestionVariants {
+  cipherGrid: number; // 0-9 (which puzzle set)
+  logicLabyrinth: number; // 0-9 (which logic gate set)
+  patternOracle: number; // 0-9 (which pattern set)
+  memoryOfCrown: number; // 0-9 (which word set)
+  thronebreakerProtocol: number; // 0-9 (which question set)
+}
+
 export interface RoomState {
   roomId: string;
   joinCode: string;
@@ -18,6 +26,7 @@ export interface RoomState {
   players: Player[]; // Player objects with wallet, displayName, etc.
   maxPlayers: number;
   totalRounds: number;
+  questionVariants: QuestionVariants; // NEW: All players get same questions
   currentRound: number;
   state: "WAITING" | "COUNTDOWN" | "IN_PROGRESS" | "FINISHED";
   countdownEndsAt?: number | null;

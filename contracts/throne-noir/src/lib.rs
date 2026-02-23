@@ -2,7 +2,7 @@
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, contractclient, panic_with_error, symbol_short, Address,
-    Bytes, BytesN, Env,
+    Bytes, BytesN, Env, Vec,
 };
 
 // ============================================================================
@@ -40,8 +40,9 @@ pub enum DataKey {
     BackendPubKey,
     GameHub,           // Game Hub contract address
     SessionId,         // Current multiplayer session ID
-    SessionPlayer1,    // Player 1 in current session
-    SessionPlayer2,    // Player 2 in current session
+    SessionPlayer1,    // Player 1 in current session 
+    SessionPlayer2,    // Player 2 in current session 
+    SessionAllPlayers, // All players (2-4) in current session
     SessionStarted,    // Has start_game been called for current session?
     Progress(Address),
     Nonce(Address),
@@ -112,17 +113,33 @@ impl Throne {
     // MULTIPLAYER SESSION (Game Hub Integration)
     // ========================================================================
 
-    /// Start a multiplayer session between two players
+    /// Start a multiplayer session with 2-4 players
     /// REQUIRED: Calls Game Hub's start_game() for hackathon compliance
     /// Frontend/backend should call this when a multiplayer room countdown finishes
+    /// 
+    /// NOTE: Game Hub only supports 2-player tracking, so only first 2 players
+    /// are reported to Game Hub. All players can still play and compete.
+    /// 
+    /// # Arguments
+    /// * `session_id` - Unique session identifier
+    /// * `players` - Vec of 2-4 player addresses
     pub fn start_multiplayer_session(
         env: Env,
         session_id: u32,
-        player1: Address,
-        player2: Address,
+        players: Vec<Address>,
     ) {
-        // Require auth from at least one player (typically the host)
+        // Validate player count (2-4 players)
+        let player_count = players.len();
+        if player_count < 2 || player_count > 4 {
+            panic_with_error!(&env, Error::InvalidNonce); // Reuse error code
+        }
+
+        // Require auth from first player (host)
+        let player1 = players.get(0).expect("Player 1 required");
         player1.require_auth();
+
+        // Get player 2
+        let player2 = players.get(1).expect("Player 2 required");
 
         // Get Game Hub address
         let game_hub_addr: Address = env
@@ -131,7 +148,10 @@ impl Throne {
             .get(&DataKey::GameHub)
             .expect("Game Hub not configured");
 
-        // Store session info
+        // Store ALL players in session
+        env.storage().instance().set(&DataKey::SessionAllPlayers, &players);
+        
+        // Store first 2 players for Game Hub compatibility
         env.storage().instance().set(&DataKey::SessionId, &session_id);
         env.storage().instance().set(&DataKey::SessionPlayer1, &player1);
         env.storage().instance().set(&DataKey::SessionPlayer2, &player2);
@@ -139,6 +159,7 @@ impl Throne {
 
         // HACKATHON REQUIREMENT: Call Game Hub's start_game()
         // This reports the game start to the ecosystem
+        // NOTE: Only first 2 players reported (Game Hub limitation)
         let game_hub_client = GameHubClient::new(&env, &game_hub_addr);
         let game_id = env.current_contract_address();
         
@@ -153,7 +174,7 @@ impl Throne {
 
         env.events().publish(
             (symbol_short!("session"),),
-            (session_id, player1, player2),
+            (session_id, player_count),
         );
     }
 
@@ -282,29 +303,56 @@ impl Throne {
                     .get(&DataKey::SessionId)
                     .unwrap_or(0);
 
+                // Get all players in session
+                let all_players: Vec<Address> = env
+                    .storage()
+                    .instance()
+                    .get(&DataKey::SessionAllPlayers)
+                    .unwrap_or(Vec::new(&env));
+
+                // Only report to Game Hub if winner is one of the first 2 players
+                // (Game Hub only tracks 2 players)
                 let player1: Address = env
                     .storage()
                     .instance()
                     .get(&DataKey::SessionPlayer1)
                     .expect("Session player1 not found");
 
-                // Determine if player1 won (current player is winner)
-                let player1_won = player == player1;
-
-                // Get Game Hub address and report game end
-                let game_hub_addr: Address = env
+                let player2: Address = env
                     .storage()
                     .instance()
-                    .get(&DataKey::GameHub)
-                    .expect("Game Hub not configured");
+                    .get(&DataKey::SessionPlayer2)
+                    .expect("Session player2 not found");
 
-                let game_hub_client = GameHubClient::new(&env, &game_hub_addr);
-                game_hub_client.end_game(&session_id, &player1_won);
+                // Check if winner is player1 or player2 (tracked by Game Hub)
+                let is_tracked_player = player == player1 || player == player2;
 
-                env.events().publish(
-                    (symbol_short!("gameend"),),
-                    (session_id, player.clone(), player1_won),
-                );
+                if is_tracked_player {
+                    // Winner is one of the Game Hub tracked players
+                    let player1_won = player == player1;
+
+                    // Get Game Hub address and report game end
+                    let game_hub_addr: Address = env
+                        .storage()
+                        .instance()
+                        .get(&DataKey::GameHub)
+                        .expect("Game Hub not configured");
+
+                    let game_hub_client = GameHubClient::new(&env, &game_hub_addr);
+                    game_hub_client.end_game(&session_id, &player1_won);
+
+                    env.events().publish(
+                        (symbol_short!("gameend"),),
+                        (session_id, player.clone(), player1_won),
+                    );
+                } else {
+                    // Winner is player 3 or 4 - they won but Game Hub doesn't track them
+                    // This is fine - the game still works, just no Game Hub report
+                    env.events().publish(
+                        (symbol_short!("winner"),),
+                        (session_id, player.clone()),
+                    );
+                }
             }
 
             env.events().publish(
@@ -435,6 +483,14 @@ impl Throne {
             .unwrap_or(0)
     }
 
+    /// Get all players in current session (2-4 players)
+    pub fn get_session_players(env: Env) -> Vec<Address> {
+        env.storage()
+            .instance()
+            .get(&DataKey::SessionAllPlayers)
+            .unwrap_or(Vec::new(&env))
+    }
+
     // ========================================================================
     // ADMIN METHODS
     // ========================================================================
@@ -461,6 +517,7 @@ impl Throne {
         env.storage().instance().remove(&DataKey::SessionId);
         env.storage().instance().remove(&DataKey::SessionPlayer1);
         env.storage().instance().remove(&DataKey::SessionPlayer2);
+        env.storage().instance().remove(&DataKey::SessionAllPlayers);
 
         env.events()
             .publish((symbol_short!("newround"),), (new_round,));
