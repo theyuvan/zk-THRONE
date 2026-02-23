@@ -38,6 +38,23 @@ frontend-template/*.tsbuildinfo
 *.swp
 *.swo
 
+# Unused Stellar Game Studio templates and games (not part of ZK-THRONE)
+sgs_frontend/
+template_frontend/
+docs/
+contracts/dice-duel/
+contracts/number-guess/
+contracts/twenty-one/
+
 # OS
 .DS_Store
 Thumbs.db
+
+# Deployment docs and scripts (keep README.md)
+*.md
+!README.md
+*.ps1
+!make-commits.ps1
+test-build.ps1
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_CHECKLIST.md
