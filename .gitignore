@@ -46,6 +46,10 @@ contracts/dice-duel/
 contracts/number-guess/
 contracts/twenty-one/
 
+# Initialization scripts with sensitive keys
+initialize-contract.ps1
+initialize-contract.sh
+
 # OS
 .DS_Store
 Thumbs.db
