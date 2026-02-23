@@ -76,7 +76,7 @@ export default function Index() {
   const [finalResultsData, setFinalResultsData] = useState<FinalResults | null>(null);
   const [isSubmittingFinalTrial, setIsSubmittingFinalTrial] = useState(false);
   const { submitSolution: submitSinglePlayer, isSubmitting } = useGame();
-  const { submitSolution: submitMultiplayer, getFinalResults, getRoomState } = useMultiplayer();
+  const { submitSolution: submitMultiplayer, getFinalResults, getRoomState, currentRoom } = useMultiplayer();
   const { isConnected, connect, publicKey } = useWallet();
   const { toast } = useToast();
 
@@ -229,9 +229,18 @@ export default function Index() {
       let result;
       if (gameState.multiplayer?.roomId) {
         console.log('🎮 MULTIPLAYER MODE - Using room:', gameState.multiplayer.roomId);
-        console.log('   Player round:', roundId);
-        // Multiplayer: Submit to room endpoint with player's current round
-        result = await submitMultiplayer(solution, roundId, gameState.multiplayer.roomId);
+        console.log('   Game round:', roundId);
+        
+        // CRITICAL: Get player's cumulative on-chain progress
+        // Contract tracks progress across ALL games, not per-game rounds
+        const { throneContractService } = await import("@/services/throneContractService");
+        const cumulativeProgress = await throneContractService.getProgress(publicKey!);
+        const trialRoundId = cumulativeProgress + 1;
+        
+        console.log(`📊 Cumulative progress: ${cumulativeProgress}, submitting as trial_round_id: ${trialRoundId}`);
+        
+        // Multiplayer: Submit with cumulative trial_round_id (NOT per-game round)
+        result = await submitMultiplayer(solution, trialRoundId, gameState.multiplayer.roomId);
       } else {
         console.log('👤 SINGLE-PLAYER MODE');
         // Single-player: Submit to contract
@@ -389,6 +398,7 @@ export default function Index() {
               onComplete={handleTrialComplete}
               onBack={() => goTo('portalRoom')}
               isSubmitting={isSubmitting}
+              currentRoom={currentRoom}
             />
           </SceneTransition>
         );
