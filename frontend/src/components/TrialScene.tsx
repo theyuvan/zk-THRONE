@@ -6,6 +6,7 @@ import { Trial } from '@/types/game';
 import ParticleField from '@/components/effects/ParticleField';
 import * as THREE from 'three';
 import { HelpCircle, X } from 'lucide-react';
+import { RoomState } from '@/services/multiplayerService';
 
 // New Trial Components
 import CipherGridTrial from '@/components/trials/CipherGridTrial';
@@ -216,6 +217,7 @@ interface TrialSceneProps {
   onComplete: () => void;
   onBack: () => void;
   isSubmitting?: boolean;
+  currentRoom?: RoomState | null; // Room data for question variants
 }
 
 // Simple trial mini-games
@@ -441,9 +443,11 @@ const TRIAL_RULES: Record<string, { objective: string; howToPlay: string[]; tip:
   }
 };
 
-export default function TrialScene({ trial, trialNumber, totalTrials, onComplete, onBack, isSubmitting = false }: TrialSceneProps) {
+export default function TrialScene({ trial, trialNumber, totalTrials, onComplete, onBack, isSubmitting = false, currentRoom }: TrialSceneProps) {
   const [completed, setCompleted] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  // currentRoom is now passed as prop instead of using hook
+  
   const SceneComponent = trialScenes[trial.id] || DefaultTrialScene;
   const rules = TRIAL_RULES[trial.id] || {
     objective: trial.description,
@@ -457,20 +461,48 @@ export default function TrialScene({ trial, trialNumber, totalTrials, onComplete
     onComplete();
   };
 
+  // Get question variants from room (all players get same questions in same room)
+  const variants = currentRoom?.questionVariants;
+  
+  // Debug: Log variants to ensure they're available
+  console.log('🎮 TrialScene:', { 
+    trialId: trial.id, 
+    hasRoom: !!currentRoom, 
+    variants,
+    variantForThisTrial: variants?.[trial.id === 'colorSigil' ? 'cipherGrid' : 'other']
+  });
+
+  // For multiplayer, wait until room variants are loaded
+  // This ensures all players get the same questions
+  if (currentRoom && !variants) {
+    return (
+      <div className="relative w-full h-screen bg-void overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl text-[#FFD700] mb-4">Loading trial questions...</div>
+          <div className="text-sm text-gray-400">Syncing with room...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Create a key that includes variant index to force remount when it changes
+  // This ensures all players get the same questions when they join the room
+  const trialKey = variants ? `${trial.id}-${variants.cipherGrid}-${variants.logicLabyrinth}` : trial.id;
+
   const GameComponent = (() => {
     switch (trial.id) {
       case 'colorSigil':
-        return <CipherGridTrial onComplete={handleTrialComplete} />;
+        return <CipherGridTrial key={trialKey} onComplete={handleTrialComplete} variantIndex={variants?.cipherGrid} />;
       case 'logicLabyrinth':
-        return <LogicLabyrinthTrial onComplete={handleTrialComplete} />;
+        return <LogicLabyrinthTrial key={trialKey} onComplete={handleTrialComplete} variantIndex={variants?.logicLabyrinth} />;
       case 'patternOracle':
-        return <PatternOracleTrial onComplete={handleTrialComplete} />;
+        return <PatternOracleTrial key={trialKey} onComplete={handleTrialComplete} variantIndex={variants?.patternOracle} />;
       case 'memoryOfCrown':
-        return <MemoryOfCrownTrial onComplete={handleTrialComplete} />;
+        return <MemoryOfCrownTrial key={trialKey} onComplete={handleTrialComplete} variantIndex={variants?.memoryOfCrown} />;
       case 'finalOath':
-        return <ThronebreakerProtocolTrial onComplete={handleTrialComplete} />;
+        return <ThronebreakerProtocolTrial key={trialKey} onComplete={handleTrialComplete} variantIndex={variants?.thronebreakerProtocol} />;
       default:
-        return <GenericGame onSolve={() => setCompleted(true)} trial={trial} />;
+        return <GenericGame key={trialKey} onSolve={() => setCompleted(true)} trial={trial} />;
     }
   })();
 
